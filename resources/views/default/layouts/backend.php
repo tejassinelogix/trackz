@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="/assets/vendor/open-iconic/css/open-iconic-bootstrap.min.css">
     <link rel="stylesheet" href="/assets/vendor/fontawesome/css/all.css">
     <link rel="stylesheet" href="/assets/vendor/flatpickr/flatpickr.min.css">
+    <link rel="stylesheet" href="/assets/vendor/datatables/css/jquery.dataTables.min.css">
     <!-- END PLUGINS STYLES -->
     
     <!-- BEGIN THEME STYLES -->
@@ -81,9 +82,8 @@
 <script src="/assets/vendor/jquery/jquery.min.js"></script>
 <script src="/assets/vendor/bootstrap/js/popper.min.js"></script>
 <script src="/assets/vendor/bootstrap/js/bootstrap.min.js"></script>
-<script src="/assets/vendor/datatables/jquery.dataTables.min.js"></script>
 <!-- END BASE JS -->
-
+<script src="/assets/vendor/datatables/jquery.dataTables.min.js"></script>
 <!-- BEGIN PLUGINS JS -->
 <?=$this->section('plugin_js')?>
 <!-- END PLUGINS JS -->

@@ -47,7 +47,8 @@ class Application
         'Api'       =>  Services\Routes\ApiRoutes::class,
         'Inventory' =>  Services\Routes\InventoryRoutes::class,
         'Product' =>  Services\Routes\ProductRoutes::class,
-        'Category' =>  Services\Routes\CategoryRoutes::class,
+        'Category' =>  Services\Routes\CategoryRoutes::class,   
+        'Marketplace' =>  Services\Routes\MarketplaceRoutes::class,        
     ];
     
     /**

@@ -19,12 +19,6 @@
                     </li><!-- /.menu-item -->
                     <!-- .menu-item -->
                     <?php
-                        function startsWith($haystack, $needle)
-                        {
-                             $length = strlen($needle);
-                             return (substr($haystack, 0, $length) === $needle);
-                        }
-
                         // determine if sub-menu has active page - set up array for in_array
                         $member_menu = ['account-profile','account-payment','account-invoices','account-activites'];
                     ?>
@@ -46,20 +40,9 @@
                         </ul><!-- /child menu -->
                     </li><!-- /.menu-item -->
                     <!-- .menu-item -->
-                    <li class="menu-item has-child <?php if(startsWith($page, 'account')) echo 'has-active';?>" style="">
-                        <a href="/account/stores" class="menu-link" title="View Stores"><span class="menu-icon oi oi-person" title="View Stores"></span> <span class="menu-text">Stores</span></a>
-                        <ul class="menu">
-                            <li class="menu-item <?php if($page == 'account-stores') echo 'has-active';?>">
-                                <a href="/account/stores" title="View Stores" class="menu-link" tabindex="-1">View Stores</a>
-                            </li>
-                            <li class="menu-item <?php if(startsWith($page, 'account-shipping-methods')) echo 'has-active';?>">
-                                <a href="/account/shipping-methods" title="Shipping Methods" class="menu-link" tabindex="-1">Shipping Methods</a>
-                            </li>
-                            <li class="menu-item <?php if(startsWith($page, 'account-shipping-zones')) echo 'has-active';?>">
-                                <a href="/account/shipping-zones" title="Shipping Zones" class="menu-link" tabindex="-1">Shipping Zones</a>
-                            </li>
-                        </ul>
-                    </li>
+                    <li class="menu-item<?php if($page == 'account-stores' || substr($page,0,14) == 'account-stripe') echo ' has-active';?>">
+                        <a href="/account/stores" title="<?=_('Select Store to Work On')?>" class="menu-link"><span class="menu-icon fa fa-shopping-cart" title="<?=_('Tracksz Member Account')?>"></span><span class="menu-text"><?=_('Stores')?></span></a>
+                    </li><!-- /.menu-item -->
                     <!-- .menu-item -->
                     <?php
                     // determine if sub-menu has active page - set up array for in_array
@@ -77,9 +60,34 @@
                         </ul><!-- /child menu -->
                     </li><!-- /.menu-item -->
 
+         
+                    <!-- .menu-item -->
+                        <!-- <li class="menu-item<?php if($page == 'marketplace-dashboard') echo ' has-active';?>">
+                            <a href="/marketplace/dashboard" title="<?=_('Martketplace Module')?>" class="menu-link"><span class="menu-icon fa fa-shopping-cart" title="<?=_('Marketplace Module')?>"></span><span class="menu-text"><?=_('Marketplace')?></span></a>
+                        </li>-->
+                     <!-- .menu-item -->
+
 
                      <!-- .menu-item -->
-                     <?php
+                    <?php
+                    // determine if sub-menu has active page - set up array for in_array
+                    $marketplace_menu = ['marketplace-dashboard','marketplace-list'];                    ?>
+                    <li class="menu-item has-child<?php if(in_array($page, $marketplace_menu)) echo ' has-active';?>">
+                        <a href="#" class="menu-link" title="<?=_('Martketplace Module')?>"><span class="menu-icon fa fa-shopping-cart" title="<?=_('Active Store Inventory')?>"></span> <span class="menu-text"><?=_('Marketplace')?></span></a> <!-- child menu -->
+                        <ul class="menu">
+                            <li class="menu-item<?php if($page == 'marketplace-dashboard') echo ' has-active';?>">
+                                <a href="/marketplace/dashboard" title="<?=_('Add Marketplace')?>" class="menu-link"><?=_('Add')?></a>
+                            </li>
+                            <li class="menu-item<?php if($page == 'marketplace-list') echo ' has-active';?>">
+                                <a href="/marketplace/list" title="<?=_('Marketplace List')?>" class="menu-link"><?=_('List')?></a>
+                            </li>
+                        </ul><!-- /child menu -->
+                    </li><!-- /.menu-item -->
+                     
+                  
+
+                    <!-- .menu-item -->
+                    <?php
                     // determine if sub-menu has active page - set up array for in_array
                     $product_menu = ['product-view','product-defaults','product-categories','product-add'];
                     ?>
@@ -92,9 +100,9 @@
                             <li class="menu-item<?php if($page == 'product-add') echo ' has-active';?>">
                                 <a href="/product/add" title="<?=_('View, Add, Edit, Delete product')?>" class="menu-link"><?=_('Add')?></a>
                             </li>
-                            <li class="menu-item<?php if($page == 'product-defaults') echo ' has-active';?>">
+                            <!-- <li class="menu-item<?php if($page == 'product-defaults') echo ' has-active';?>">
                                 <a href="/product/defaults" title="<?=_('Active Store Inventory Default Settings')?>" class="menu-link"><?=_('Defaults')?></a>
-                            </li>
+                            </li> -->
                         </ul><!-- /child menu -->
                     </li><!-- /.menu-item -->
 
@@ -116,11 +124,12 @@
                             <li class="menu-item<?php if($page == 'category-view') echo ' has-active';?>">
                                 <a href="/category/view" title="<?=_('View, Add, Edit, Delete product')?>" class="menu-link"><?=_('View')?></a>
                             </li>
-                            <li class="menu-item<?php if($page == 'category-defaults') echo ' has-active';?>">
+                            <!-- <li class="menu-item<?php if($page == 'category-defaults') echo ' has-active';?>">
                                 <a href="/category/defaults" title="<?=_('Active Store Inventory Default Settings')?>" class="menu-link"><?=_('Defaults')?></a>
-                            </li>
+                            </li> -->
                         </ul><!-- /child menu -->
-                    </li><!-- /.menu-item -->
+                    </li><!-- /.menu-item --> 
+
                 </ul><!-- /.menu -->
             </nav><!-- /.stacked-menu -->
         </div><!-- /.aside-menu -->
