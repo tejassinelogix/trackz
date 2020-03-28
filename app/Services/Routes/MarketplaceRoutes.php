@@ -39,6 +39,9 @@ class MarketplaceRoutes extends AbstractServiceProvider
                 $route->get('/dashboard/step2', Marketplace\MarketplaceController::class . '::addSecond');
                 $route->post('/dashboard/step3', Marketplace\MarketplaceController::class . '::addThree');
                 $route->get('/edit/{Id:number}', Marketplace\MarketplaceController::class . '::editMarketplace');
+                $route->post('/update', Marketplace\MarketplaceController::class . '::updateMarketplace');
+
+                $route->post('/delete', Marketplace\MarketplaceController::class . '::deleteMarketData');
 
             })->middleware($this->container->get('Csrf'))
                 ->middleware($this->container->get('Auth'));
