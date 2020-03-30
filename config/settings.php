@@ -12,6 +12,10 @@ return [
     'default_country' => 223,
     'default_zone'    => 3648,
     'migration_folder' => '/config/migrations/',
+    
+    // default page list rows
+    'page_rows' => '30',
+
     // default login remember me time, three weeks
     'default_remember' => 1814400,
     

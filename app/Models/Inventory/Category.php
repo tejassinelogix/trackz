@@ -14,7 +14,7 @@ class Category
     
     public function __construct(PDO $db,Adapter $adapter = null)
     {
-        $this->db = $db;  
+        $this->db = $db;
         $this->adapter = new Adapter([
             'driver'   => 'Mysqli',
             'database' => getenv('DATABASE'),
@@ -64,14 +64,14 @@ class Category
         // echo "<pre>";
         // print_r(get_class_methods(get_class($sql)));
         // exit;
-        // if(array_key_exists('cst_policy_number', $search_params) 
+        // if(array_key_exists('cst_policy_number', $search_params)
         // && !empty($search_params['cst_policy_number']))
         //     $select->where("sys_h_policy.cst_policy_number", $search_params['cst_policy_number']);
 
         // $select->where(['Id' => 1]);
 
         // Server side processing
-        if(array_key_exists('search', $search_params) 
+        if(array_key_exists('search', $search_params)
         && !empty($search_params['search'])){ // search not empty
 
                 $select->where('ParentId','LIKE',"%{$search_params['search']}%");
@@ -79,25 +79,25 @@ class Category
                 $select->where('Description', 'LIKE',"%{$search_params['search']}%");
                 $select->offset($search_params['start']);
                 $select->limit($search_params['limit']);
-             //   $select->orderBy($search_params['order'],$search_params['dir']);        
+             //   $select->orderBy($search_params['order'],$search_params['dir']);
 
     
 
-    }else{ // search is empty    
+        }else{ // search is empty
             if(array_key_exists('start', $search_params))
                     $select->offset($search_params['start']);
 
-            if(array_key_exists('limit', $search_params) 
-                && !empty($search_params['limit']))                                       
+            if(array_key_exists('limit', $search_params)
+                && !empty($search_params['limit']))
                     $select->limit($search_params['limit']);
 
-            // if(array_key_exists('order', $search_params) 
-            //     && !empty($search_params['order']))                                       
+            // if(array_key_exists('order', $search_params)
+            //     && !empty($search_params['order']))
             //         $select->orderBy($search_params['order'],$search_params['dir']);
-    }   
-        $selectString = $sql->buildSqlString($select);        
+    }
+        $selectString = $sql->buildSqlString($select);
         $results = $this->adapter->query($selectString,$this->adapter::QUERY_MODE_EXECUTE);
-        return $results = $results->toArray();        
+        return $results = $results->toArray();
     }
     
     /*

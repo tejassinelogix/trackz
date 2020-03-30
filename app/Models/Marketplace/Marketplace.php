@@ -33,7 +33,7 @@ class Marketplace
     */
     public function getAll()
     {
-        $stmt = $this->db->prepare('SELECT * FROM Marketplace');
+        $stmt = $this->db->prepare('SELECT * FROM marketplace');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -47,7 +47,7 @@ class Marketplace
     */
     public function findById($Id)
     {
-        $stmt = $this->db->prepare('SELECT * FROM Marketplace WHERE Id = :Id');
+        $stmt = $this->db->prepare('SELECT * FROM marketplace WHERE Id = :Id');
         $stmt->execute(['Id' => $Id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }

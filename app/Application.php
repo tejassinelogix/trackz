@@ -43,12 +43,16 @@ class Application
     protected $routeProviders = [
         'Default'   =>  Services\Routes\DefaultRoutes::class,
         'Account'   =>  Services\Routes\AccountRoutes::class,
+        'Inventory' =>  Services\Routes\InventoryRoutes::class,
         'Ajax'      =>  Services\Routes\AjaxRoutes::class,
         'Api'       =>  Services\Routes\ApiRoutes::class,
         'Inventory' =>  Services\Routes\InventoryRoutes::class,
         'Product' =>  Services\Routes\ProductRoutes::class,
         'Category' =>  Services\Routes\CategoryRoutes::class,   
         'Marketplace' =>  Services\Routes\MarketplaceRoutes::class,        
+        
+        // example Rooutes file
+        'Example'   =>  Services\Routes\zzExampleRoutes::class,
     ];
     
     /**
