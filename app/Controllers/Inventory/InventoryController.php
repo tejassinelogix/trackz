@@ -13,9 +13,8 @@ use Laminas\Validator\File\FilesSize;
 use Laminas\Validator\File\Extension;
 use Exception;
 use PDO;
-use SlmQueue\Job\AbstractJob;
 
-class InventoryController extends AbstractJob
+class InventoryController
 {
     private $view;
     private $db;

@@ -3,7 +3,7 @@
 namespace App\Services\Routes;
 
 // Use to shorten controller paths in route definitions
-use App\Controllers\Category;
+use App\Controllers\Inventory;
 
 // For functionality
 use League\Container\ServiceProvider\AbstractServiceProvider;
@@ -32,13 +32,20 @@ class CategoryRoutes extends AbstractServiceProvider
             $routes   = (new Router)->setStrategy($strategy);            	
             // Main Inventory routes.  Must have a selected store
             $routes->group('/category', function (\League\Route\RouteGroup $route) {
-                $route->get('/view', Category\CategoryController::class . '::view');
-                $route->get('/add', Category\CategoryController::class . '::add');
-                $route->get('/defaults', Category\CategoryController::class . '::defaults');
-                $route->get('/lists', Category\CategoryController::class . '::get_list_records');
+
+                
+
+                $route->get('/view', Inventory\CategoryController::class . '::view');
+                $route->get('/add', Inventory\CategoryController::class . '::add');
+                $route->get('/defaults', Inventory\CategoryController::class . '::defaults');
+                $route->get('/lists', Inventory\CategoryController::class . '::get_list_records');
     
-                $route->post('/defaults', Category\CategoryController::class . '::updateDefaults');
-                $route->post('/insert_category', Category\CategoryController::class . '::add_Category');
+                $route->post('/defaults', Inventory\CategoryController::class . '::updateDefaults');
+                $route->post('/insert_category', Inventory\CategoryController::class . '::addCategory');
+                $route->post('/delete', Inventory\CategoryController::class . '::deleteCategoryData');
+
+                $route->get('/edit/{Id:number}', Inventory\CategoryController::class . '::editCategory');
+                $route->post('/update', Inventory\CategoryController::class . '::updateCategory');
                 
                 
             })->middleware($this->container->get('Csrf'))              
