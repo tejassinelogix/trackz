@@ -108,7 +108,13 @@ class Category
 
 
 
-     /*
+
+
+
+
+
+    
+ /*
     * addCateogry - add a new cateogry for a user
     *
     * @param  $form  - Array of form fields, name match Database Fields
