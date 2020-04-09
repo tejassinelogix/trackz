@@ -1,46 +1,41 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace App\Models\Marketplace;
-use Laminas\Db\Sql\Sql;
-use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\ResultSet\ResultSet;
 use PDO;
 
-class Marketplace
+class StoreHasMarketplace
 {
     // Contains Resources
     private $db;
-
- 
-
-    public function __construct(PDO $db)
+    
+    private $adapter;
+    
+    public function __construct(PDO $db,Adapter $adapter = null)
     {
         $this->db = $db;
     }
-
-
+    
+    
     /*
-    * all records - get all marketplace records
-    *
-    * @param  
-    * @return associative array.
-    */
+  * all records - get all marketplace records for a store
+  *
+  * @param
+  * @return associative array.
+  */
     public function getAll()
     {
-        $stmt = $this->db->prepare('SELECT * FROM marketplace ORDER BY `Id` DESC');
+        $stmt = $this->db->prepare('SELECT * FROM StoreHasMarketPlace ORDER BY MarketName');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-
+    
+    
     /*
-    * all records - get all marketplace records
-    *
-    * @param  
-    * @return associative array.
-    */
+   * all records - get all marketplace records
+   *
+   * @param
+   * @return associative array.
+   */
     public function getActiveUserAll($UserId = 0, $Status = array())
     {
         $Status = implode(',', $Status); // WITHOUT WHITESPACES BEFORE AND AFTER THE COMMA
@@ -48,6 +43,8 @@ class Marketplace
         $stmt->execute(['UserId' => $UserId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    
     /*
     * find - Find Marketplace by marketplace record Id
     *
@@ -60,7 +57,7 @@ class Marketplace
         $stmt->execute(['Id' => $Id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-
+    
     /*
     * find - Find Marketplace by marketplace record UserId and Status
     *
@@ -68,13 +65,13 @@ class Marketplace
     * @param  Status  - Table record Status of marketplace to find
     * @return associative array.
     */
-    public function findByUserId($UserId, $Status = 0)
+    public function findByUserId($UserId , $Status = 0)
     {
         $stmt = $this->db->prepare('SELECT * FROM marketplace WHERE UserId = :UserId AND Status = :Status');
-        $stmt->execute(['UserId' => $UserId, 'Status' => $Status]);
+        $stmt->execute(['UserId' => $UserId,'Status' => $Status]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    
     /*
     * find - Find Marketplace by marketplace record UserId and Status
     *
@@ -82,12 +79,13 @@ class Marketplace
     * @param  Status  - Table record Status of marketplace to find
     * @return associative array.
     */
-    public function findFtpDetails($MarketName, $UserId = 0,  $Status = 0)
+    public function findFtpDetails($MarketName , $UserId = 0 ,  $Status = 0)
     {
         $stmt = $this->db->prepare('SELECT * FROM marketplace WHERE MarketName = :MarketName AND UserId = :UserId AND Status = :Status');
-        $stmt->execute(['MarketName' => $MarketName, 'UserId' => $UserId, 'Status' => $Status]);
+        $stmt->execute(['MarketName' => $MarketName, 'UserId' => $UserId,'Status' => $Status]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
     /*
     * addMarketplace - add a new marketplace for a user
     *
@@ -102,18 +100,20 @@ class Marketplace
         $query .= 'FtpAppendVenue, SuspendExport,SendDeletes,MarketAcceptPrice,MarketAcceptPriceVal,';
         $query .= 'MarketAcceptPriceValMulti, MarketSpecificPrice, MarketAcceptPriceVal2,MarketAcceptPriceValMulti2, Status, UserId';
         $query .= ') VALUES (';
-        $query .= ':MarketName, :EmailAddress, :SellerID, :Password,:FtpAddress, :FtpUserId,';
+        $query .= ':MarketName, :EmailAddress, :SellerID, :Password, :FtpUserId,';
         $query .= ':FtpPassword, :PrependVenue, :AppendVenue, :IncreaseMinMarket, :FileFormat,';
         $query .= ':FtpAppendVenue, :SuspendExport, :SendDeletes, :MarketAcceptPrice, :MarketAcceptPriceVal,';
         $query .= ':MarketAcceptPriceValMulti, :MarketSpecificPrice, :MarketAcceptPriceVal2, :MarketAcceptPriceValMulti2, :Status, :UserId';
         $query .= ')';
-
+        
         $stmt = $this->db->prepare($query);
         if (!$stmt->execute($form)) {
             return false;
         }
         return true;
     }
+    
+    
     /*
     * editAddress - Find address by address record Id
     *
@@ -147,7 +147,7 @@ class Marketplace
         $query .= 'Status = :Status, ';
         $query .= 'Updated = :Updated ';
         $query .= 'WHERE Id = :Id ';
-
+        
         $stmt = $this->db->prepare($query);
         if (!$stmt->execute($form)) {
             return 0;
@@ -155,13 +155,12 @@ class Marketplace
         $stmt = null;
         return $form['Id'];
     }
-
-
-
+    
+    
     /*
     * delete - delete a Marketplace records
     *
-    * @param  $id = table record ID   
+    * @param  $id = table record ID
     * @return boolean
     */
     public function delete($Id = null)
@@ -171,22 +170,5 @@ class Marketplace
         $stmt->bindParam(':Id', $Id, PDO::PARAM_INT);
         return $stmt->execute();
     }
-    /********************************* */
-    // [0] => __construct
-    // [1] => prepare
-    // [2] => beginTransaction
-    // [3] => commit
-    // [4] => rollBack
-    // [5] => inTransaction
-    // [6] => setAttribute
-    // [7] => exec
-    // [8] => query
-    // [9] => lastInsertId
-    // [10] => errorCode
-    // [11] => errorInfo
-    // [12] => getAttribute
-    // [13] => quote
-    // [14] => __wakeup
-    // [15] => __sleep
-    // [16] => getAvailableDrivers  
+    
 }

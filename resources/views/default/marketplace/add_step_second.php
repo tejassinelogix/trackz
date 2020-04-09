@@ -67,6 +67,12 @@ $description_meta = 'Marketplace Add for your Tracksz Store, a Multiple Market P
 
 
 
+
+
+
+
+
+
                 <form name="category_market_request" id="category_market_request" action="<?=\App\Library\Config::get('company_url')?>/marketplace/dashboard/step3" method="POST" data-parsley-validate>
 
                 <div class="page-section"> <!-- .page-section starts -->
@@ -76,9 +82,7 @@ $description_meta = 'Marketplace Add for your Tracksz Store, a Multiple Market P
                             <div class="card-body"> <!-- .card-body starts -->
                                 <div class="row">  <!-- .row starts -->
                                     <div class="col-sm"> <!-- col-sm Group Left Starts -->
-
                                         <h5 class="card-title"><?=_('Marketplace Credentials')?></h5> <!-- Card title -->
-
                                         <div class="form-group"> <!-- form-group starts -->
                                             <label for="EmailAddress"><?=_('Email')?></label>
                                                 <input type="email" class="form-control" id="EmailAddress" name="EmailAddress" placeholder="Enter Email Address" data-parsley-required-message="<?=_('Enter Email Address')?>" data-parsley-group="fieldset01" required

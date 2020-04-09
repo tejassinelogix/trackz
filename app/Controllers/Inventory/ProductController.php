@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers\Product;
+namespace App\Controllers\Inventory;
 
 use App\Library\Views;
 use App\Models\Inventory\Category;
@@ -15,12 +15,12 @@ use Laminas\Validator\File\FilesSize;
 use Laminas\Validator\File\Extension;
 use App\Library\ValidateSanitize\ValidateSanitize;
 use Exception;
+use App\Models\Marketplace\Marketplace;
 
 class ProductController
 {
     private $view;
     private $db;
-
     /*
     * __construct - 
     * @param  $form  - Default View, PDO db   
@@ -31,8 +31,6 @@ class ProductController
         $this->view = $view;
         $this->db   = $db;
     }
-
-
     /*
     * add - Load Add Product View
     * @param  $form  - Id    
@@ -42,9 +40,8 @@ class ProductController
     {
         $cat_obj = new Category($this->db);
         $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
-        return $this->view->buildResponse('product/add', ['all_category' => $all_category]);
+        return $this->view->buildResponse('/inventory/product/add', ['all_category' => $all_category]);
     }
-
     /*
     @author    :: Tejas
     @task_id   :: product attributes map
@@ -56,11 +53,9 @@ class ProductController
         try {
             $form = $request->getParsedBody();
             unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.
-
             // Sanitize and Validate
             $validate = new ValidateSanitize();
             $form = $validate->sanitize($form); // only trims & sanitizes strings (other filters available)
-
             $validate->validation_rules(array(
                 'ProductNameInput'    => 'required',
                 'ProductSKUInput' => 'required',
@@ -79,19 +74,16 @@ class ProductController
             if (isset($_FILES['ProdImage']['error']) && $_FILES['ProdImage']['error'] > 0) {
                 throw new Exception("Please Upload Product Image...!", 301);
             }
-
             $validator = new FilesSize([
                 'min' => '0kB',  // minimum of 1kB
                 'max' => '10MB', // maximum of 10MB
             ]);
-
             // if false than throw Size error 
             if (!$validator->isValid($_FILES)) {
                 throw new Exception("File upload size is too large...!", 301);
             }
-
             // Using an options array:
-            $validator_ext = new Extension(['png,jpg']);
+            $validator_ext = new Extension(['png,jpg,PNG,JPG,jpeg,JPEG']);
             // if false than throw type error
             if (!$validator_ext->isValid($_FILES['ProdImage'])) {
                 throw new Exception("Please upload valid file type JPG & PNG...!", 301);
@@ -118,7 +110,7 @@ class ProductController
                 ]);
                 $cat_obj = new Category($this->db);
                 $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
-                return $this->view->buildResponse('product/add', ['all_category' => $all_category]);
+                return $this->view->buildResponse('/inventory/product/add', ['all_category' => $all_category]);
             } else {
                 throw new Exception("Sorry we encountered an issue.  Please try again.", 301);
             }
@@ -152,10 +144,9 @@ class ProductController
 
             $cat_obj = new Category($this->db);
             $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
-            return $this->view->buildResponse('product/add', ['all_category' => $all_category, 'form' => $form]);
+            return $this->view->buildResponse('/inventory/product/add', ['all_category' => $all_category, 'form' => $form]);
         }
     }
-
 
     /*
     * PrepareInsertData - Assign Value to new array and prepare insert data    
@@ -178,7 +169,6 @@ class ProductController
         $form_data['EbayTitle'] = (isset($form['ProdTitleBayInput']) && !empty($form['ProdTitleBayInput'])) ? $form['ProdTitleBayInput'] : null;
         $form_data['Qty'] = (isset($form['ProdQtyInput']) && !empty($form['ProdQtyInput'])) ? $form['ProdQtyInput'] : 0;
         $form_data['CategoryId'] = (isset($form['CategoryName']) && !empty($form['CategoryName'])) ? $form['CategoryName'] : 0;
-
         $form_data['Status'] = (isset($form['Status']) && !empty($form['Status'])) ? $form['Status'] : 0;
         $form_data['UserId'] = (isset($form['UserId']) && !empty($form['UserId'])) ? $form['UserId'] : Session::get('auth_user_id');
         return $form_data;
@@ -222,7 +212,7 @@ class ProductController
     {
         $prod_obj = new Product($this->db);
         $all_product = $prod_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
-        return $this->view->buildResponse('product/view', ['all_product' => $all_product]);
+        return $this->view->buildResponse('/inventory/product/view', ['all_product' => $all_product]);
     }
 
     /*
@@ -270,7 +260,7 @@ class ProductController
         $cat_obj = new Category($this->db);
         $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
         if (is_array($form) && !empty($form)) {
-            return $this->view->buildResponse('/product/edit', [
+            return $this->view->buildResponse('/inventory/product/edit', [
                 'form' => $form, 'all_category' => $all_category
             ]);
         } else {
@@ -278,7 +268,7 @@ class ProductController
                 'alert' => 'Failed to fetch Product details. Please try again.',
                 'alert_type' => 'danger'
             ]);
-            return $this->view->buildResponse('/product/view', ['all_product' => $all_product]);
+            return $this->view->buildResponse('/inventory/product/view', ['all_product' => $all_product]);
         }
     }
 
@@ -294,25 +284,25 @@ class ProductController
             $methodData = $request->getParsedBody();
             unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
             $prod_img = $methodData['ProductImageHidden'];
-            
-            // Sanitize and Validate
-             $validate = new ValidateSanitize();
-             $methodData = $validate->sanitize($methodData); // only trims & sanitizes strings (other filters available)
- 
-             $validate->validation_rules(array(
-                 'ProductNameInput'    => 'required',
-                 'ProductSKUInput' => 'required',
-                 'ProductIdInput' => 'required',
-                 'ProductBasePriceInput' => 'required',
-                 'ProductCondition' => 'required'
-             ));
- 
-             $validated = $validate->run($methodData);
 
-             // use validated as it is filtered and validated        
-             if ($validated === false) {
-                 throw new Exception("Please enter required fields...!", 301);
-             }
+            // Sanitize and Validate
+            $validate = new ValidateSanitize();
+            $methodData = $validate->sanitize($methodData); // only trims & sanitizes strings (other filters available)
+
+            $validate->validation_rules(array(
+                'ProductNameInput'    => 'required',
+                'ProductSKUInput' => 'required',
+                'ProductIdInput' => 'required',
+                'ProductBasePriceInput' => 'required',
+                'ProductCondition' => 'required'
+            ));
+
+            $validated = $validate->run($methodData);
+
+            // use validated as it is filtered and validated        
+            if ($validated === false) {
+                throw new Exception("Please enter required fields...!", 301);
+            }
 
             /* File upload validation starts */
             if (isset($_FILES['ProdImage']['error']) && $_FILES['ProdImage']['error'] == 0) {
@@ -328,7 +318,7 @@ class ProductController
                 }
 
                 // Using an options array:
-                $validator_ext = new Extension(['png,jpg']);
+                $validator_ext = new Extension(['png,jpg,PNG,JPG,jpeg,JPEG']);
                 // if false than throw type error
                 if (!$validator_ext->isValid($_FILES['ProdImage'])) {
                     throw new Exception("Please upload valid file type JPG & PNG...!", 301);
@@ -353,7 +343,7 @@ class ProductController
                 ]);
                 $prod_obj = new Product($this->db);
                 $all_product = $prod_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
-                return $this->view->buildResponse('product/view', ['all_product' => $all_product]);
+                return $this->view->buildResponse('/inventory/product/view', ['all_product' => $all_product]);
                 unlink(getcwd() . "/assets/images/product/" . $methodData['ProductImageHidden']);
             } else {
                 throw new Exception("Failed to update category. Please ensure all input is filled out correctly.", 301);
@@ -374,7 +364,7 @@ class ProductController
             $cat_obj = new Category($this->db);
             $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
             $methodData['Image'] = $prod_img;
-            return $this->view->buildResponse('product/edit', [
+            return $this->view->buildResponse('/inventory/product/edit', [
                 'form' => $methodData, 'all_category' => $all_category
             ]);
         }
@@ -387,9 +377,9 @@ class ProductController
     * @return array
     */
     private function PrepareUpdateData($form = array())
-    {   
-        $form_data = array();   
-        $form_data['Id'] = (isset($form['Id']) && !empty($form['Id']))?$form['Id']:null;     
+    {
+        $form_data = array();
+        $form_data['Id'] = (isset($form['Id']) && !empty($form['Id'])) ? $form['Id'] : null;
         $form_data['Name'] = (isset($form['ProductNameInput']) && !empty($form['ProductNameInput'])) ? $form['ProductNameInput'] : null;
         $form_data['Notes'] = (isset($form['ProductNote']) && !empty($form['ProductNote'])) ? $form['ProductNote'] : null;
         $form_data['SKU'] = (isset($form['ProductSKUInput']) && !empty($form['ProductSKUInput'])) ? $form['ProductSKUInput'] : 0;
@@ -401,10 +391,121 @@ class ProductController
         $form_data['ExpectedShip'] = (isset($form['ProdExpectedShip']) && !empty($form['ProdExpectedShip'])) ? $form['ProdExpectedShip'] : 0;
         $form_data['EbayTitle'] = (isset($form['ProdTitleBayInput']) && !empty($form['ProdTitleBayInput'])) ? $form['ProdTitleBayInput'] : null;
         $form_data['Qty'] = (isset($form['ProdQtyInput']) && !empty($form['ProdQtyInput'])) ? $form['ProdQtyInput'] : 0;
-        $form_data['CategoryId'] = (isset($form['CategoryName']) && !empty($form['CategoryName'])) ? $form['CategoryName'] : 0;        
-        
-        $form_data['Status'] = (isset($form['Status']) && !empty($form['Status'])) ? $form['Status'] : 0;      
+        $form_data['CategoryId'] = (isset($form['CategoryName']) && !empty($form['CategoryName'])) ? $form['CategoryName'] : 0;
+
+        $form_data['Status'] = (isset($form['Status']) && !empty($form['Status'])) ? $form['Status'] : 0;
         // $form_data['UserId'] = (isset($form['UserId']) && !empty($form['UserId'])) ? $form['UserId'] : Session::get('auth_user_id');
         return $form_data;
+    }
+
+    /*
+    * UploadProduct -  Load Edit Product View
+    * @param  $form  - Id    
+    * @return boolean load view with pass data
+    */
+    public function UploadProduct()
+    {
+        $market_places = (new Marketplace($this->db))->findByUserId(Session::get('auth_user_id'), 1);
+        return $this->view->buildResponse('inventory/product/upload', ['market_places' => $market_places]);
+    }
+
+
+    /*
+    * UploadInventoryFTP - Upload Product csv file to ftp server
+    * @param  $form  - marketplace of ftp server details, product cs file      
+    * @return boolean 
+    */
+    public function UploadInventoryFTP(ServerRequest $request)
+    {
+        $form = $request->getUploadedFiles();
+        $form_2 = $request->getParsedBody();
+
+        unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.
+        unset($form_2['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.
+        try {
+
+            $validate2 = new ValidateSanitize();
+            $form_2 = $validate2->sanitize($form_2); // only trims & sanitizes strings (other filters available)
+
+            $validate2->validation_rules(array(
+                'MarketName'    => 'required'
+            ));
+
+            $validated = $validate2->run($form_2, true);
+
+            // use validated as it is filtered and validated        
+            if ($validated === false) {
+                throw new Exception("Please Select Marketplace...!", 301);
+            }
+
+            if (isset($_FILES['ProductUpload']['error']) && $_FILES['ProductUpload']['error'] > 0) {
+                throw new Exception("Please Upload Product file...!", 301);
+            }
+
+            $validator = new FilesSize([
+                'min' => '0kB',  // minimum of 1kB
+                'max' => '10MB', // maximum of 10MB
+            ]);
+
+            // if false than throw Size error 
+            if (!$validator->isValid($_FILES)) {
+                throw new Exception("File upload size is too large...!", 301);
+            }
+
+            // Using an options array:
+            $validator2 = new Extension(['docs,jpg,xlsx,csv']);
+            // if false than throw type error
+            if (!$validator2->isValid($_FILES['ProductUpload'])) {
+                throw new Exception("Please upload valid file type docs, jpg and xlsx...!", 301);
+            }
+
+            $ftp_details = (new Marketplace($this->db))->findFtpDetails($form_2['MarketName'], Session::get('auth_user_id'), 1);
+
+            if (is_array($ftp_details) && empty($ftp_details)) {
+                throw new Exception("Ftp Details are not available in database...!", 301);
+            }
+
+            $ftp_connect = ftp_connect($ftp_details['FtpAddress']);
+            $ftp_username = $ftp_details['FtpUserId'];
+            $ftp_password = $ftp_details['FtpPassword'];
+
+            if (false === $ftp_connect) {
+                throw new Exception("FTP connection error!");
+            }
+
+            $ftp_login = ftp_login($ftp_connect, $ftp_username, $ftp_password);
+
+            if (!$ftp_login)
+                throw new Exception("Ftp Server connection fails...!", 400);
+
+            $file_stream = $_FILES['ProductUpload']['tmp_name'];
+            $file_name = $_FILES['ProductUpload']['name'];
+
+            $is_file_upload = ftp_put($ftp_connect, 'Inventory/' . $file_name, $file_stream, FTP_ASCII);
+
+            if (!$is_file_upload)
+                throw new Exception("Ftp File upload fails...! Please try again", 651);
+
+
+            $validated['alert'] = 'Product File is uploaded into FTP Server successully..!';
+            $validated['alert_type'] = 'success';
+            $this->view->flash($validated);
+            return $this->view->redirect('/product/upload');
+        } catch (Exception $e) {
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = 'Product File not uploaded into server...!';
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->redirect('/product/upload');
+        }
+        ftp_close($ftp_connect);
+        exit;
     }
 }

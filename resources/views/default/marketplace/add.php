@@ -74,7 +74,6 @@ $description_meta = 'Marketplace Add for your Tracksz Store, a Multiple Market P
 
                         <div class="container"> <!-- Container Starts -->
                             <div class="row"> <!-- Row Starts -->
-
                                 <div class="col-sm"> <!-- col-sm Group Left Starts -->
                                      <div class="form-group">
                                          <select name="MarketName" id="MarketName" class="browser-default custom-select market_stores_select">

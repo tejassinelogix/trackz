@@ -22,7 +22,6 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                     <div class="col-sm-12 alert alert-<?=$alert_type?> text-center"><?=$alert?></div>
                 <?php endif ?>
             </header><!-- /.page-title-bar -->
-            
             <div class="page-section"> <!-- .page-section starts -->
     <div class="card-deck-xl"> <!-- .card-deck-xl starts -->                
             <div class="card card-fluid">   <!-- .card card-fluid starts -->
@@ -77,9 +76,6 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
 <?=$this->stop()?>
 
 <?php $this->start('plugin_js') ?>
-<script src="/assets/vendor/pace/pace.min.js"></script>
-<script src="/assets/vendor/stacked-menu/stacked-menu.min.js"></script>
-<script src="/assets/vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <?=$this->stop()?>
 
 <?php $this->start('page_js') ?>

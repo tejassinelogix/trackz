@@ -9,20 +9,31 @@ $description_meta = 'Add a Shipping Zone at Tracksz, a Multiple Market Inventory
     <div class="page">
         <div class="page-inner">
             <header class="page-title-bar">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item active">
-                            <a href="/account/shipping-zones"><i class="breadcrumb-icon fa fa-angle-left mr-2"></i><?=_('Shipping Zones')?></a>
-                        </li>
-                    </ol>
-                </nav>
-                <h1 class="page-title"> <?=_('Add a Shipping Zone')?> </h1>
-            </header>
-            <?php if(isset($alert) && $alert):?>
-                <div class="row text-center">
-                    <div class="col-sm-12 alert alert-<?=$alert_type?> text-center"><?=$alert?></div>
+                <div class="d-flex flex-column flex-md-row">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="/account/panel" title="Tracksz Account Dashboard"><i class="breadcrumb-icon fa fa-angle-left mr-2"></i><?=('Dashboard')?></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/account/stores" title="Tracksz Member's Stores"><?=('Stores')?></a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/account/shipping-zones" title="Store's Shipping Zones"c><?=('Shipping Zones')?></a>
+                            </li>
+                            <li class="breadcrumb-item active"><?=('Add')?></li>
+                        </ol>
+                    </nav>
+                    <!-- Insert Active Store Header -->
+                    <?php $this->insert('partials/active_store'); ?>
                 </div>
-            <?php endif ?>
+                <h1 class="page-title"> <?=_('Add a Shipping Zone')?> </h1>
+                <?php if(isset($alert) && $alert):?>
+                    <div class="row text-center">
+                        <div class="col-sm-12 alert alert-<?=$alert_type?> text-center"><?=$alert?></div>
+                    </div>
+                <?php endif ?>
+            </header>
             <div class="page-section">
                 <div class="section-block">
                     <div class="card">
@@ -80,10 +91,6 @@ $description_meta = 'Add a Shipping Zone at Tracksz, a Multiple Market Inventory
 <?=$this->stop()?>
 
 <?php $this->start('plugin_js') ?>
-<script src="/assets/vendor/pace/pace.min.js"></script>
-<script src="/assets/vendor/stacked-menu/stacked-menu.min.js"></script>
-<script src="/assets/vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-<script src="/assets/vendor/bs-stepper/js/bs-stepper.min.js"></script>
 <?=$this->stop()?>
 
 <?php $this->start('footer_extras') ?>

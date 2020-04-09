@@ -87,6 +87,7 @@ class Category
     }
 
 
+
     
     /*
     * addCateogry - add a new cateogry for a user

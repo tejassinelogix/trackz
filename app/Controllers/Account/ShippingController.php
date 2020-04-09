@@ -34,15 +34,15 @@ class ShippingController
         $this->db   = $db;
     }
     
-    /** 
+    /**
      *  viewMethods - View shipping methods
-     * 
+     *
      *  @return view - /account/shipping-methods
      */
     public function viewMethods()
     {
         $methods = (new ShippingMethod($this->db))->findByMember($this->auth->getUserId());
-        $activeStoreId = (new Member($this->db))->getActiveStoreId($this->auth->getUserId());
+        $activeStoreId = Cookie::get('tracksz_active_store');
         return $this->view->buildResponse('/account/shipping_method', [
             'shippingMethods' => $methods,
             'activeStoreId' => $activeStoreId
@@ -51,24 +51,24 @@ class ShippingController
 
     /**
      *  viewCreateMethod - View form to create a shipping method
-     * 
+     *
      *  @return view - /account/shipping-methods/create
      */
-    public function viewCreateMethod()
+    public function viewAddMethod()
     {
-        return $this->view->buildResponse('/account/shipping_method_create', []);
+        return $this->view->buildResponse('/account/shipping_method_add', []);
     }
 
     /**
      *  viewUpdateMethod - View form to update shipping method
-     * 
+     *
      *  @param  $id  - ID of shipping method to update
      *  @return view - Redirect to list of methods on update
      */
     public function viewUpdateMethod(ServerRequest $request, array $data)
     {
         $method = (new ShippingMethod($this->db))->find($data['Id']);
-        return $this->view->buildResponse('/account/shipping_method_create', [
+        return $this->view->buildResponse('/account/shipping_method_add', [
             'update_id' => $data['Id'],
             'update_name' => $method['Name'],
             'update_delivery' => $method['DeliveryTime'],
@@ -80,32 +80,32 @@ class ShippingController
 
     /**
      *  viewCreateZone - View form to create a shipping zone
-     * 
+     *
      *  @return view - /account/shipping-zones/create
      */
-    public function viewCreateZone()
+    public function viewAddZone()
     {
-        return $this->view->buildResponse('/account/shipping_zone_create', []);
+        return $this->view->buildResponse('/account/shipping_zone_add', []);
     }
 
     /**
      *  viewUpdateZone - View form to update shipping zone
-     * 
+     *
      *  @param  $id  - ID of shipping method to update
      *  @return view - Redirect to list of methods on update
      */
     public function viewUpdateZone(ServerRequest $request, array $data)
     {
         $zone = (new ShippingZone($this->db))->find($data['Id']);
-        return $this->view->buildResponse('/account/shipping_zone_create', [
+        return $this->view->buildResponse('/account/shipping_zone_add', [
             'update_id' => $data['Id'],
             'update_name' => $zone['Name']
         ]);
     }
 
-    /** 
+    /**
      *  viewZones - View shipping zones
-     * 
+     *
      *  @return view - /account/shipping-zones
      */
     public function viewZones()
@@ -118,7 +118,7 @@ class ShippingController
 
     /**
      *  createMethod - Add shipping method and redirect to list of methods
-     * 
+     *
      *  @param  ServerRequest - To grab form data
      *  @return view - Redirect based on success
      */
@@ -148,7 +148,7 @@ class ShippingController
 
      /**
      *  createZone - Add shipping zone and redirect to list of zones
-     * 
+     *
      *  @param  ServerRequest - To grab form data
      *  @return view - Redirect based on success
      */
@@ -177,7 +177,7 @@ class ShippingController
 
     /**
      *  updateZone  - Update shipping zone
-     * 
+     *
      *  @param  $request - To extract zone name
      *  @return view  - Redirect based on success
      */
@@ -208,7 +208,7 @@ class ShippingController
 
     /**
      *  deleteMethod - Delete shipping method via ID
-     * 
+     *
      *  @param  $data - Contains ID
      *  @return view  - Redirect based on success
      */
@@ -235,7 +235,7 @@ class ShippingController
 
     /**
      *  updateMethod  - Update shipping method
-     * 
+     *
      *  @param  $request - To extract method data
      *  @return view  - Redirect based on success
      */
