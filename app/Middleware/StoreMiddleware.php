@@ -50,5 +50,4 @@ final class StoreMiddleware implements MiddlewareInterface
         $this->view->flash($data);
         return $this->view->redirect('/account/stores');
     }
-    
 }

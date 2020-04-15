@@ -20,12 +20,10 @@ final class CsrfMiddleware implements MiddlewareInterface
      * @var StreamFactoryInterface
      */
     private $streamFactory;
-    
     /**
      * @var string
      */
     private $name = '__token';
-    
     /**
      * @var string
      */
@@ -257,7 +255,6 @@ final class CsrfMiddleware implements MiddlewareInterface
         $regex = '/(<form\b[^>]*>)(.*?)(<\/form>)/is';
         $htmlHiddenField = sprintf('$1<input type="hidden" name="%s" value="%s">$2$3', $this->name, $tokenValue);
         $body = preg_replace($regex, $htmlHiddenField, $body);
-        
         return (string)$body;
     }
     

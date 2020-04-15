@@ -48,7 +48,6 @@ $description_meta = 'Category Add for your Tracksz Store, a Multiple Market Prod
                             <form name="category_market_request" id="category_market_request" action="/category/insert_category"
                                 method="POST" enctype="multipart/form-data" data-parsley-validate>
                                 <div class="container">
-            
                                     <div class="row">
                                         <div class="col-sm">
                                             <div class="form-group">

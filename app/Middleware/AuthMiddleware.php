@@ -41,7 +41,6 @@ final class AuthMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        
         if ($this->auth->isLoggedIn()) {
             return $handler->handle($request);
         }
@@ -52,5 +51,4 @@ final class AuthMiddleware implements MiddlewareInterface
         $this->view->flash($data);
         return $this->view->redirect('/login');
     }
-    
 }
