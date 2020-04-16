@@ -9,7 +9,7 @@ use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\ResultSet\ResultSet;
 use PDO;
 
-class Attribute
+class Download
 {
     // Contains Resources
     private $db;
@@ -27,7 +27,7 @@ class Attribute
     */
     public function count_all_records()
     {
-        $stmt = $this->db->prepare('SELECT COUNT(`Id`) as total_records FROM Category');
+        $stmt = $this->db->prepare('SELECT COUNT(`Id`) as total_records FROM Download');
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
@@ -39,7 +39,7 @@ class Attribute
     */
     public function all()
     {
-        $stmt = $this->db->prepare('SELECT Id, `Name`,`Value`,`SortOrder` FROM ProductAttribute ORDER BY `Name`');
+        $stmt = $this->db->prepare('SELECT Id, `Name`,`Filename`,`Mask` FROM Download ORDER BY `Name`');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -49,10 +49,10 @@ class Attribute
     *
     * @return array of arrays
     */
-    public function ProductAttributeJoinAll()
+    public function DownloadJoinAll()
     {
-        $stmt = $this->db->prepare('SELECT `cat`.`Id` as `CatId`,`Category`.`Name` as `ParentName`,`Category`.`Id`, `Category`.`Name` as `Name`,`Category`.`Description`, `cat`.`ParentId` as `ParentCategory`,`Category`.`Image` FROM `Category` LEFT JOIN `Category` as `cat` ON 
-        `Category`.`Id` =  `cat`.`ParentId`');
+        $stmt = $this->db->prepare('SELECT `cat`.`Id` as `CatId`,`Download`.`Name` as `ParentName`,`Download`.`Id`, `Download`.`Name` as `Name`,`Download`.`Description`, `cat`.`ParentId` as `ParentDownload`,`Download`.`Image` FROM `Download` LEFT JOIN `Download` as `cat` ON 
+        `Download`.`Id` =  `cat`.`ParentId`');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -65,7 +65,7 @@ class Attribute
     public function getActiveUserAll($UserId = 0, $Status = array())
     {
         $Status = implode(',', $Status); // WITHOUT WHITESPACES BEFORE AND AFTER THE COMMA
-        $stmt = $this->db->prepare("SELECT * FROM ProductAttribute WHERE UserId = :UserId AND Status IN ($Status) ORDER BY `Id` DESC");
+        $stmt = $this->db->prepare("SELECT * FROM Download WHERE UserId = :UserId AND Status IN ($Status) ORDER BY `Id` DESC");
         $stmt->execute(['UserId' => $UserId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -77,7 +77,7 @@ class Attribute
     */
     public function findParents()
     {
-        $stmt = $this->db->prepare('SELECT Id, `Name` FROM Category WHERE ParentId = 0 ORDER BY `Name`');
+        $stmt = $this->db->prepare('SELECT Id, `Name` FROM Download WHERE ParentId = 0 ORDER BY `Name`');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -86,17 +86,17 @@ class Attribute
 
 
     /*
-    * addAttribute - add a new attribute for a user
+    * addDownload - add a new download for a user
     *
     * @param  $form  - Array of form fields, name match Database Fields
     *                  Form Field Names MUST MATCH Database Column Names
     * @return boolean
     */
-    public function addAttribute($form = array())
+    public function addDownload($form = array())
     {
-        $query  = 'INSERT INTO ProductAttribute (Name, Value, SortOrder, StoreId';
+        $query  = 'INSERT INTO Download (Name, Filename, Mask, StoreId';
         $query .= ') VALUES (';
-        $query .= ':Name, :Value, :SortOrder, :StoreId';
+        $query .= ':Name, :Filename, :Mask, :StoreId';
         $query .= ')';
 
         $stmt = $this->db->prepare($query);
@@ -108,46 +108,46 @@ class Attribute
 
 
     /*
-    * delete - delete a ProductAttribute records
+    * delete - delete a Download records
     *
     * @param  $id = table record ID   
     * @return boolean
     */
     public function delete($Id = null)
     {
-        $query = 'DELETE FROM ProductAttribute WHERE Id = :Id';
+        $query = 'DELETE FROM Download WHERE Id = :Id';
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':Id', $Id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     /*
-    * find - Find ProductAttribute by ProductAttribute record Id
+    * find - Find Download by Download record Id
     *
-    * @param  Id  - Table record Id of ProductAttribute to find
+    * @param  Id  - Table record Id of Download to find
     * @return associative array.
     */
     public function findById($Id)
     {
-        $stmt = $this->db->prepare('SELECT * FROM ProductAttribute WHERE Id = :Id');
+        $stmt = $this->db->prepare('SELECT * FROM Download WHERE Id = :Id');
         $stmt->execute(['Id' => $Id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
 
     /*
-    * editAttribute - Find ProductAttribute by ProductAttribute record Id and update
+    * editDownload - Find Download by Download record Id and update
     *
     * @param  $form  - Array of form fields, name match Database Fields
     *                  Form Field Names MUST MATCH Database Column Names
     * @return boolean
     */
-    public function editAttribute($form)
+    public function editDownload($form)
     {
-        $query  = 'UPDATE ProductAttribute SET ';
+        $query  = 'UPDATE Download SET ';
         $query .= 'Name = :Name, ';
-        $query .= 'Value = :Value, ';
-        $query .= 'SortOrder = :SortOrder, ';
+        $query .= 'Filename = :Filename, ';
+        $query .= 'Mask = :Mask, ';
         $query .= 'StoreId = :StoreId, ';
         $query .= 'Updated = :Updated ';
         $query .= 'WHERE Id = :Id ';
