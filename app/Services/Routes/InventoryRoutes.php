@@ -41,7 +41,6 @@ class InventoryRoutes extends AbstractServiceProvider
                 $route->post('/ftpupload', Inventory\InventoryController::class . '::UploadInventoryFTP');
                 $route->post('/csvupload', Inventory\InventoryController::class . '::updateCsvInventory');
                 $route->post('/defaults', Inventory\InventoryController::class . '::updateDefaults');
-                
             })->middleware($this->container->get('Csrf'))
                 ->middleware($this->container->get('Auth'));
             // Main Inventory routes.  Must have a selected store
@@ -102,6 +101,20 @@ class InventoryRoutes extends AbstractServiceProvider
             })->middleware($this->container->get('Csrf'))
                 ->middleware($this->container->get('Auth'));
             // Main Attribute routes.  Must have a selected store
+
+
+
+            // Main Recurring routes.  Must have a selected store
+            $routes->group('/recurring', function (\League\Route\RouteGroup $route) {
+                $route->get('/page', Inventory\RecurringController::class . '::view');
+                $route->get('/add', Inventory\RecurringController::class . '::add');
+                $route->post('/insert_recurring', Inventory\RecurringController::class . '::addRecurringData');
+                $route->post('/delete', Inventory\RecurringController::class . '::deleteRecurringData');
+                $route->get('/edit/{Id:number}', Inventory\RecurringController::class . '::editRecurring');
+                $route->post('/update', Inventory\RecurringController::class . '::updateRecurring');
+            })->middleware($this->container->get('Csrf'))
+                ->middleware($this->container->get('Auth'));
+            // Main Recurring routes.  Must have a selected store
 
             return $routes;
         })->setShared(true);
