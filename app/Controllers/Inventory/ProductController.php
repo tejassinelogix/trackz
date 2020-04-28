@@ -7,6 +7,7 @@ namespace App\Controllers\Inventory;
 use App\Library\Views;
 use App\Models\Inventory\Category;
 use App\Models\Product\Product;
+use App\Models\Account\Store;
 use Delight\Cookie\Session;
 use Laminas\Diactoros\ServerRequest;
 use PDO;
@@ -41,6 +42,20 @@ class ProductController
         $cat_obj = new Category($this->db);
         $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
         return $this->view->buildResponse('/inventory/product/add', ['all_category' => $all_category]);
+    }
+
+    /*
+    * add - Load Add Product View
+    * @param  $form  - Id    
+    * @return boolean load view with pass data
+    */
+    public function add_2()
+    {
+        $cat_obj = new Category($this->db);
+        $all_category = $cat_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
+        $store_obj = new Store($this->db);
+        $all_store = $store_obj->findId(2, 23);
+        return $this->view->buildResponse('/inventory/product/add_2', ['all_category' => $all_category, 'all_store' => $all_store]);
     }
     /*
     @author    :: Tejas
@@ -208,7 +223,7 @@ class ProductController
     * @param  none 
     * @return boolean load view with pass data
     */
-    public function view()
+    public function browse()
     {
         $prod_obj = new Product($this->db);
         $all_product = $prod_obj->getActiveUserAll(Session::get('auth_user_id'), [0, 1]);
