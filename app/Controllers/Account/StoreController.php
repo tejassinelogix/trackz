@@ -132,6 +132,7 @@ class StoreController
             'categories' => $categories,
         ]);
     }
+
     /**
      * edit - Edit a Store - same form as add (function store above)
      *

@@ -241,6 +241,7 @@ $description_meta = 'Member Stores at Tracksz, a Multiple Market Inventory Manag
             new $.fn.dataTable.FixedHeader(table);
         <?php endif; ?>
     });
+
     function deleteStore(el) {
         var url = $('#' + el.id).data("url");
         $('#deleteStoreForm').attr('action', url);
