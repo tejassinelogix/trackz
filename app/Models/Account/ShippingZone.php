@@ -8,6 +8,12 @@ class ShippingZone
 {
     // Contains Resources
     private $db;
+    private $countryCodes = [
+        'US' => 223, 
+        'CA' => 38, 
+        'GB' => 222, 
+        'AU' => 13
+    ];
     
     public function __construct(PDO $db)
     {
@@ -119,5 +125,104 @@ class ShippingZone
         $stmt->bindParam(':id', $data['Id'], PDO::PARAM_INT);
         $stmt->bindParam(':_name', $data['Name'], PDO::PARAM_STR);
         return $stmt->execute();
+    }
+
+    /**
+     *  isAssignedToRegion - Check if a zone is already assigned to a region
+     * 
+     *  @param $zoneId - Shipping zone ID
+     *  @param $countryCode - Shorthand code of region
+     *  @return bool - Zone is assigned to region
+     */
+    private function isAssignedToRegion($zoneId, $countryId)
+    {
+        $query = 'SELECT Id FROM ShippingZoneToRegion WHERE ZoneId = :zoneId AND CountryId = :countryId';
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':zoneId', $zoneId, PDO::PARAM_INT);
+        $stmt->bindParam(':countryId', $countryId, PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return boolval($result);
+    }
+
+    /**
+     *  bulkAssign - Assign a shipping zone to an entire region
+     * 
+     *  @param $zoneId - Shipping zone ID
+     *  @param $countryCode - Shorthand code of region
+     *  @return bool - Indicates success
+     */
+    public function bulkAssign($zoneId, $countryCode)
+    {
+        if (array_key_exists($countryCode, $this->countryCodes))
+        {
+            $countryId = $this->countryCodes[$countryCode];
+
+            // Delete redundant specific entries then bulk assign (save lots of space)
+            $query = 'DELETE FROM ShippingZoneToRegion WHERE ZoneId = :zoneId AND CountryId = :countryId;';
+            $query .= 'INSERT INTO ShippingZoneToRegion (ZoneId, CountryId) VALUES (:zoneId, :countryId)';
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':zoneId', $zoneId, PDO::PARAM_INT);
+            $stmt->bindParam(':countryId', $countryId, PDO::PARAM_INT);
+
+            $stmt->execute();
+        }
+        else if ($countryCode === 'US_CA')
+        {
+            $unitedStatesId = $this->countryCodes['US'];
+            $canadaId = $this->countryCodes['CA'];
+
+            // Delete redundant specific entries then bulk assign (save lots of space)
+            $query = 'DELETE FROM ShippingZoneToRegion WHERE ZoneId = :zoneId AND (CountryId = :usId OR CountryId = :caId);';
+            $query .= 'INSERT INTO ShippingZoneToRegion (ZoneId, CountryId) VALUES (:zoneId, :usId), (:zoneId, :caId)';
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':zoneId', $zoneId, PDO::PARAM_INT);
+            $stmt->bindParam(':usId', $unitedStatesId, PDO::PARAM_INT);
+            $stmt->bindParam(':caId', $canadaId, PDO::PARAM_INT);
+
+            $stmt->execute();
+        }
+        else if ($countryCode === '*')
+        {
+            foreach (['GB', 'AU'] as $country)
+            {
+                $isAssigned = $this->isAssignedToRegion($zoneId, $countryId);
+                if ($isAssigned)
+                {
+                    $query = 'UPDATE ShippingZoneToRegion SET ZipCodeMin = NULL, ZipCodeMax = NULL WHERE ZoneId = :zoneId';
+                    $stmt = $this->db->prepare($query);
+                    $stmt->bindParam(':zoneId', $zoneId, PDO::PARAM_INT);
+                }
+                else
+                {
+                    $query = 'INSERT INTO ShippingZoneToRegion (ZoneId, CountryId) VALUES (:zoneId, :countryId)';
+                    $stmt = $this->db->prepare($query);
+                    $stmt->bindParam(':zoneId', $zoneId, PDO::PARAM_INT);
+                    $stmt->bindParam(':countryId', $countryId, PDO::PARAM_INT);
+                }
+
+                $stmt->execute();
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getCountryAssignments()
+    {
+        $map = [];
+        $query = 'SELECT ZoneId FROM ShippingZoneToRegion WHERE CountryId = :countryId';
+        $stmt = $this->db->prepare($query);
+
+        $countryIds = (new Country($this->db))->getAllIds();
+        foreach ($countryIds as $countryId)
+        {
+            $stmt->bindParam(':countryId', $countryId, PDO::PARAM_INT);
+
+        }
     }
 }

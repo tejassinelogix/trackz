@@ -18,9 +18,9 @@ $description_meta = 'Assign Shipping Zones at Tracksz, a Multiple Market Invento
             <header class="page-title-bar">
                 <!-- title -->
                 <div class="mb-3 d-flex justify-content-between">
-                    <h1 class="page-title"> <?=_('Assign Shipping Zones')?> </h1>
+                    <h1 class="page-title"> <?=_('Bulk Assign Shipping Zones')?> </h1>
                 </div>
-                <p class="text-muted"> <?=_('Here you can assign shipping zones to entire countries or only specific regions.')?></p>
+                <p class="text-muted"> <?=_('Here you can assign shipping zones to entire countries.')?></p>
                 <?php if(isset($alert) && $alert):?>
                     <div class="col-sm-12 alert alert-<?=$alert_type?> text-center"><?=$alert?></div>
                 <?php endif ?>
@@ -30,7 +30,7 @@ $description_meta = 'Assign Shipping Zones at Tracksz, a Multiple Market Invento
                 <div class="card-body">
                     <p>Select an area to assign a shipping zone:</p>
                     <blockquote>
-                        <form action="/account/shipping-zones/region/bulk-assign" method="POST">
+                        <form action="/account/shipping-assign/bulk-assign" method="POST">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="Country" id="US" value="US">
                                 <label class="form-check-label" for="US">All of United States</label>
@@ -52,8 +52,8 @@ $description_meta = 'Assign Shipping Zones at Tracksz, a Multiple Market Invento
                                 <label class="form-check-label" for="US_CA">All of United States and Canada</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="Country" id="*" value="*">
-                                <label class="form-check-label" for="*">All Countries (except United States and Canada)</label>
+                                <input class="form-check-input" type="radio" name="Country" id="GB_AU" value="GB_AU">
+                                <label class="form-check-label" for="GB_AU">All of United Kingdom and Australia</label>
                             </div>
                             <br>
                             <div class="form-group">
@@ -73,6 +73,9 @@ $description_meta = 'Assign Shipping Zones at Tracksz, a Multiple Market Invento
                             <button type="submit" class="btn btn-primary">Apply</button>
                         </form>
                     </blockquote>
+
+                    <br>
+                    <a href="/account/shipping-assign/individual">Assign shipping zones to individual countries</a>
                 </div>
             </div>
         </div><!-- /.page-inner -->
