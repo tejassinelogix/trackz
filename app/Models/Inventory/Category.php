@@ -1,4 +1,6 @@
-<?php declare(strict_types = 1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Models\Inventory;
 use Laminas\Db\Sql\Sql;
@@ -11,16 +13,15 @@ class Category
     // Contains Resources
     private $db;
     private $adapter;
-    
-    public function __construct(PDO $db,Adapter $adapter = null)
+   public function __construct(PDO $db,Adapter $adapter = null)
     {
         $this->db = $db;
-        $this->adapter = new Adapter([
-            'driver'   => 'Mysqli',
-            'database' => getenv('DATABASE'),
-            'username' => getenv('DB_USERNAME'),
-            'password' => getenv('DB_PASSWORD')
-        ]);   
+        // $this->adapter = new Adapter([
+        //     'driver'   => 'Mysqli',
+        //     'database' => getenv('DATABASE'),
+        //     'username' => getenv('DB_USERNAME'),
+        //     'password' => getenv('DB_PASSWORD')
+        // ]);   
     }
 
 
@@ -97,8 +98,8 @@ class Category
     * @return boolean
     */
     public function addCateogry($form = array())
-    {          
-        $query  = 'INSERT INTO category (ParentId, Name, Description, Image, Status, UserId';        
+    {
+        $query  = 'INSERT INTO category (ParentId, Name, Description, Image, Status, UserId';
         $query .= ') VALUES (';
         $query .= ':ParentId, :Name, :Description, :Image, :Status, :UserId';
         $query .= ')';
@@ -106,7 +107,7 @@ class Category
         $stmt = $this->db->prepare($query);
         if (!$stmt->execute($form)) {
             return false;
-        }        
+        }
         return true;
     }
 
@@ -125,7 +126,7 @@ class Category
         return $stmt->execute();
     }
 
-      /*
+    /*
     * find - Find category by category record Id
     *
     * @param  Id  - Table record Id of category to find
@@ -139,7 +140,7 @@ class Category
     }
 
 
-      /*
+    /*
     * editCategory - Find category by category record Id and update
     *
     * @param  $form  - Array of form fields, name match Database Fields
@@ -156,15 +157,13 @@ class Category
         $query .= 'Status = :Status, ';
         $query .= 'UserId = :UserId, ';
         $query .= 'Updated = :Updated ';
-        $query .= 'WHERE Id = :Id ';    
-                
-        $stmt = $this->db->prepare($query);  
+        $query .= 'WHERE Id = :Id ';
+
+        $stmt = $this->db->prepare($query);
         if (!$stmt->execute($form)) {
             return 0;
         }
         $stmt = null;
         return $form['Id'];
-    } 
-
-    
+    }
 }

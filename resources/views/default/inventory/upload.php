@@ -18,7 +18,7 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                     <h1 class="page-title"> <?= _('Inventory File Upload') ?> </h1>
                 </div>
                 <p class="text-muted"> <?= _('This is where upload inventory for the current Active Store: ') ?><strong> <?= \Delight\Cookie\Cookie::get('tracksz_active_name') ?></strong></p>
-<div id="ajaxMsg"></div>
+                <div id="ajaxMsg"></div>
               <!--  <?php if (isset($alert) && $alert) : ?>
                     <div class="col-sm-12 alert alert-<?= $alert_type ?> text-center"><?= $alert ?></div>
                 <?php endif ?> -->
@@ -82,13 +82,13 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                                     </div>
                                 </div> <!-- col-sm Group Left Ends -->
                                 <div class="tab-pane fade" id="card-filebrowse">
-                                    <form name="dropzone_request" id="dropzone_request1" class="dropzone" action="/inventory/importupload" method="POST" enctype="multipart/form-data">
+                                    <form name="dropzone_request" id="dropzone_request" class="dropzone" action="/inventory/importupload" method="POST" enctype="multipart/form-data">
 
                                     </form>
                                     <br />
                                     <br />
                                     <br />
-                                    <button type="submit" class="btn btn-primary" id="submit-all">Upload</button>
+                                    <!-- <button type="submit" class="btn btn-primary" id="submit-all">Upload</button> -->
                                 </div>
                                 <div class="tab-pane fade" id="card-filedelete">
                                     <a href="<?php echo \App\Library\Config::get('company_url') . '/assets/inventory/InventoryRemove.csv' ?>"><i class="fa fa-file" aria-hidden="true"></i>&nbsp;&nbsp;<?= _('Sample File') ?></a>
@@ -98,22 +98,13 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                                     <br />
                                     <br />
                                     <br />
-                                    <button type="submit" class="btn btn-primary" id="submit-all">Upload</button>
+                                    <!-- <button type="submit" class="btn btn-primary" id="submit-all">Upload</button> -->
                                 </div>
-
-
                                 <div class="col-sm mt-3 pt-3">
                                     <!-- col-sm Group Right Starts -->
                                 </div> <!-- col-sm Group Right Ends -->
-
                             </div> <!-- Row Ends -->
-
-
-
-
-
                         </div>
-
                     </div><!-- /.tab-content -->
                 </div><!-- /.card-body -->
             </div><!-- /.card -->
