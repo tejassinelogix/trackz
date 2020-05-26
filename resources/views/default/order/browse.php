@@ -37,6 +37,140 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                     </div>
                 <?php endif ?>
             </header><!-- /.page-title-bar -->
+            <div class="card-deck-xl">
+                <!-- .card-deck-xl starts -->
+                <div class="card card-fluid">
+                    <!-- .card card-fluid starts -->
+                    <div class="card-body">
+                        <!-- .card-body starts -->
+                        <div class="container">
+                            <form name="order_filter" id="order_filter" action="/order/filter_order" method="POST">
+                                <div class="row">
+                                    <div class="col-sm">
+                                        <h5 class="card-title"><?= _('Search') ?></h5>
+                                        <!-- form starts -->
+                                        <div class="form-group">
+                                            <label for="SKU"><?= _('SKU') ?></label>
+                                            <input type="text" class="form-control" id="SKU" name="SKU" placeholder="Enter SKU" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Title"><?= _('Title') ?></label>
+                                            <input type="text" class="form-control" id="Title" name="Title" placeholder="Enter Title" value="">
+                                        </div>
+                                    </div> <!-- col-sm -->
+                                    <div class="col-sm" style="margin-top: 2.1rem;">
+                                        <!-- form starts -->
+                                        <div class="form-group">
+                                            <label for="ISBN"><?= _('ISBN/UPC:') ?></label>
+                                            <input type="text" class="form-control" id="ISBN" name="ISBN" placeholder="Enter ISBN" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Author"><?= _('Author') ?></label>
+                                            <input type="text" class="form-control" id="Author" name="Author" placeholder="Enter Author" value="">
+                                        </div>
+                                    </div> <!-- col-sm -->
+                                    <div class="col-sm" style="margin-top: 2.1rem;">
+                                        <!-- form starts -->
+                                        <div class="form-group">
+                                            <label for="Order"><?= _('Order #:') ?></label>
+                                            <input type="text" class="form-control" id="Order" name="Order" placeholder="Enter Order" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Customer"><?= _('Customer') ?></label>
+                                            <input type="text" class="form-control" id="Customer" name="Customer" placeholder="Enter Customer" value="">
+                                        </div>
+                                    </div> <!-- col-sm -->
+                                    <div class="col-sm" style="margin-top: 2.1rem;">
+                                        <!-- form starts -->
+                                        <div class="form-group">
+                                            <label for="Location"><?= _('Location:') ?></label>
+                                            <input type="text" class="form-control" id="Location" name="Location" placeholder="Enter Location" value="">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="Note"><?= _('Note') ?></label>
+                                            <input type="text" class="form-control" id="Note" name="Note" placeholder="Enter Note" value="">
+                                        </div>
+                                        <input type='hidden' id='clear_filter' name='clear_filter' value=''>
+                                    </div> <!-- col-sm -->
+                                </div> <!-- Row -->
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <button type="submit" class="btn btn-primary btn_clear">Clear</button>
+                            </form>
+                        </div> <!-- Container -->
+                    </div> <!-- Card Body -->
+                </div> <!-- .card card-fluid ends -->
+            </div>
+
+            <div class="card-deck-xl">
+                <!-- .card-deck-xl starts -->
+                <div class="card card-fluid">
+                    <!-- .card card-fluid starts -->
+                    <div class="card-body">
+                        <!-- .card-body starts -->
+                        <div class="container">
+
+                            <div class="row">
+                                <div class="col-sm">
+                                    <form name="order_change" id="order_change" action="/order/order_change" method="POST">
+                                        <!-- form starts -->
+                                        <div class="form-group" style="width: 150px;">
+                                            <select name="OrderStatus" id="OrderStatus" class="browser-default custom-select market_stores_select">
+                                                <option value="" selected="">Order Status...</option>
+                                                <option value="all">All</option>
+                                                <option value="new">New</option>
+                                                <option value="packed">In Process</option>
+                                                <option value="shipped">Shipped</option>
+                                                <option value="unconfirm">Unconfirmed</option>
+                                                <option value="deferred">Deferred</option>
+                                                <option value="cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                    <div class="form-group">
+                                        <a href="<?php echo \App\Library\Config::get('company_url') . "/order/pick" ?>" class="btn btn-primary" target="_blank">Pick List</a> &nbsp;
+                                        <a href="<?php echo \App\Library\Config::get('company_url') . "/order/packing" ?>" class="btn btn-primary" target="_blank">Packing Slips</a> &nbsp;
+                                        <a href="<?php echo \App\Library\Config::get('company_url') . "/order/mailing" ?>" class="btn btn-primary" target="_blank">Mailing Labels</a>
+                                    </div>
+                                </div> <!-- col-sm -->
+
+                                <div class="col-sm" style="margin-top: 2.1rem;">
+                                    <!-- form starts -->
+                                    <label for="Location"><?= _('Selected Orders:') ?></label><br>
+                                    <div class="main_div d-flex">
+                                        <!-- <a href="#" class="btn btn-primary btn_shipping" status="shipped">Ship Selected</a>&nbsp; -->
+                                        <input type='button' class='btn btn-primary btn_shipping' value='Ship Selected' status="shipped">&nbsp;
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Update Selected
+                                            </button>
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                <a class="dropdown-item btn_status_update" href="#" status="new">New</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="in-process">In Process</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="shipped">Shipped</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="deferred">Deferred</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="cancelled">Cancelled</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="shipped-noemail">Shipped - No Email</a>
+                                                <a class="dropdown-item btn_status_update" href="#" status="cancelled-noemail">Cancelled - No Email</a>
+                                            </div>
+                                        </div> &nbsp;
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Export Selected
+                                            </button>
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                <a class="dropdown-item" href="#">Excel</a>
+                                                <a class="dropdown-item" href="#">CSV</a>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div> <!-- col-sm -->
+                            </div> <!-- Row -->
+                        </div> <!-- Container -->
+                    </div> <!-- Card Body -->
+                </div> <!-- .card card-fluid ends -->
+            </div>
             <div class="page-section">
                 <!-- .page-section starts -->
                 <div class="card card-fluid">
@@ -49,6 +183,7 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                             <table id="order_table" name="order_table" class="table table-striped table-bordered nowrap" style="width:100%">
                                 <thead>
                                     <tr>
+                                        <th><input type="checkbox" name="select_all_chkbox" class="select_all_chkbox" value="0" id="select_all_chkbox"></th>
                                         <th><?= _('MarketName') ?></th>
                                         <th><?= _('OrderStatus') ?></th>
                                         <th><?= _('Currency') ?></th>
@@ -57,8 +192,10 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($all_order as $order) : ?>
+                                    <?php
+                                    foreach ($all_order as $order) : ?>
                                         <tr>
+                                            <td><input type="checkbox" class="child_chkbox" name="child_chkbox[]" value="<?php echo $order['OrderId']; ?>"></td>
                                             <td><?php echo $order['MarketplaceName']; ?></td>
                                             <td><?php echo $order['OrderStatus']; ?></td>
                                             <td><?php echo $order['OrderCurrency']; ?></td>
@@ -86,9 +223,9 @@ $description_meta = 'Inventory Listing for your Tracksz Store, a Multiple Market
 <?= $this->stop() ?>
 
 <?php $this->start('plugin_js') ?>
-<script src="/assets/vendor/pace/pace.min.js"></script>
+<!-- <script src="/assets/vendor/pace/pace.min.js"></script>
 <script src="/assets/vendor/stacked-menu/stacked-menu.min.js"></script>
-<script src="/assets/vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="/assets/vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script> -->
 <script src="/assets/javascript/pages/order.js"></script>
 <?= $this->stop() ?>
 

@@ -56,7 +56,15 @@ $description_meta = 'Category Add for your Tracksz Store, a Multiple Market Prod
                                         <div class="col-sm">
 
                                            <div class="form-group">
-                                            <div class="form-check">
+                                             <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="DontSendCopy" id="DontSendCopy" data-parsley-required-message="<?=_('Enter DontSendCopy')?>" data-parsley-group="fieldset01" 
+                                                <?php echo (isset($order_details['DontSendCopy']) && $order_details['DontSendCopy'] == 1) ? 'checked' : ''; ?>>
+                                                    <label class="form-check-label" for="DontSendCopy">
+                                                        <?=_('Do not send me a copy of any confirmation,cancellation or deferal emails')?>
+                                                    </label>
+                                                
+                                            </div>
+                                           <!--  <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="ProductActive" id="ProductActive" data-parsley-required-message="<?= _('Do not send me a copy of any confirmation,cancellation or deferal emails') ?>" data-parsley-group="fieldset01" value="">
                                                     <label class="form-check-label" for="ProductActive">
                                                         <?= _('Do not send me a copy of any confirmation,cancellation or deferal emails') ?>
@@ -95,11 +103,18 @@ $description_meta = 'Category Add for your Tracksz Store, a Multiple Market Prod
                                                     <option>9</option>
                                                 </select>
                                             </div>
+                                            <div class="col-sm mt-3 pt-3">
+                                            <div id="addfolderinput">
+  
+                                                </div>
+                                                </div>
                                         </div> <!-- col-sm -->
+                                         
                                         <div class="col-sm mt-3 pt-3">
+                                           
                                         </div> <!-- col-sm -->
                                     </div> <!-- Row -->
-                                </div> <!-- Container -->
+                                </div> <!-- Container --><br>
                                 <button type="submit" class="btn btn-primary">Submit</button>
                             </form>
                         </div> <!-- Card Body -->
@@ -123,5 +138,28 @@ $description_meta = 'Category Add for your Tracksz Store, a Multiple Market Prod
 <?= $this->stop() ?>
 
 <?php $this->start('footer_extras') ?>
+
+<script>
+     $(document).ready(function() {
+$('#NoAdditionalOrder').change(function() {
+
+          var selectObj = $(this);
+          
+          var selectedOption = selectObj.find(":selected");
+          
+          var selectedValue = selectedOption.val();
+          
+    
+          var targetDiv = $("#addfolderinput");
+          
+          targetDiv.html("");
+          for(var i = 0; i < selectedValue; i++) {
+          var f = i+1;
+          
+            targetDiv.append($("<label>Work Folder #"+ f + " (work"+ f + ")</label><br><input type='text' class='form-control' id='NoAdditionalOrder"+f+"' name='NoAdditionalOrder"+f+"'><br>"));
+          }
+      }); 
+});
+</script>
 <script src="/assets/vendor/parsleyjs/parsley.min.js"></script>
 <?php $this->stop() ?>

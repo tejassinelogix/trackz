@@ -11,6 +11,7 @@ use App\Models\Order\PostageSetting;
 use App\Models\Order\LabelSetting;
 use App\Models\Order\Order;
 use App\Models\Product\Product;
+use App\Models\Account\Store;
 use App\Models\Marketplace\Marketplace;
 use Delight\Cookie\Cookie;
 use Laminas\Diactoros\ServerRequest;
@@ -20,12 +21,18 @@ use Laminas\Validator\File\Extension;
 use Exception;
 use PDO;
 use App\Library\Config;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as WriteXlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Csv as WriteCsv;
 use Illuminate\Http\Request;
 use Delight\Cookie\Session;
 use Laminas\Log\Logger;
 use Laminas\Log\Writer\Stream;
 use Laminas\Log\Formatter\Json;
 use App\Library\Email;
+use \Mpdf\Mpdf;
 // use Resque;
 
 class OrderController
@@ -33,6 +40,7 @@ class OrderController
     private $view;
     private $auth;
     private $db;
+    private $storeid;
     /**
      * _construct - create object
      *
@@ -46,6 +54,9 @@ class OrderController
         $this->view = $view;
         $this->auth = $auth;
         $this->db   = $db;
+        $store = (new Store($this->db))->find(Session::get('member_id'), 1);
+        $this->storeid   = (isset($store[0]['Id']) && !empty($store[0]['Id'])) ? $store[0]['Id'] : 0;
+        ini_set('memory_limit', '-1');
     }
     public function browse()
     {
@@ -72,7 +83,6 @@ class OrderController
     */
     public function updateBatchMove(ServerRequest $request)
     {
-
         try {
             $methodData = $request->getParsedBody();
             unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
@@ -160,7 +170,8 @@ class OrderController
     */
     public function loadConfirmationFile()
     {
-        return $this->view->buildResponse('order/defaults', []);
+        $all_order = (new Order($this->db))->getAllBelongsTo();
+        return $this->view->buildResponse('order/confirmation_file', ['all_order' => $all_order]);
     }
 
     /*
@@ -170,7 +181,154 @@ class OrderController
     */
     public function loadExportOrder()
     {
-        return $this->view->buildResponse('order/defaults', []);
+        $all_order = (new Order($this->db))->getAllBelongsTo();
+        return $this->view->buildResponse('order/export_order', ['all_order' => $all_order]);
+        //return $this->view->buildResponse('order/defaults', []);
+    }
+
+    public function exportOrderData(ServerRequest $request)
+    {
+        try 
+        {
+            $form = $request->getParsedBody();
+            $export_type = $form['export_format'];
+            $export_val   = $form['exportType'];
+            $from_date    = $form['from_date'];
+            $to_date         = $form['to_date'];
+            $orderStatus  = $form['orderStatus'];
+
+             if($export_val == 'new')
+            {
+               $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
+            }
+
+             if($export_val == 'range')
+            {
+    
+                 $formD  =  date("Y-m-d",strtotime($from_date));
+                 $ToD    =  date("Y-m-d",strtotime($to_date));
+
+                 $order_data = (new Order($this->db))->dateRangeSearchByOrderData($formD, $ToD);
+            }
+
+             if($export_val == 'status')
+            {
+               $export_val = $orderStatus;
+               $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
+            }
+
+             if($export_val == 'All')
+            {
+                $order_data = (new Order($this->db))->allorderSearchByOrderData();
+            }
+
+            
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setCellValue('A1', 'MarketPlaceId');
+            $sheet->setCellValue('B1', 'OrderId');
+            $sheet->setCellValue('C1', 'Status');
+            $sheet->setCellValue('D1', 'Currency');
+            $sheet->setCellValue('E1', 'PaymentStatus');
+            $sheet->setCellValue('F1', 'PaymentMethod');
+            $sheet->setCellValue('G1', 'BuyerNote');
+            $sheet->setCellValue('H1', 'SellerNote');
+            $sheet->setCellValue('I1', 'ShippingMethod');
+            $sheet->setCellValue('J1', 'Tracking');
+            $sheet->setCellValue('K1', 'Carrier');
+            $sheet->setCellValue('L1', 'ShippingName');
+            $sheet->setCellValue('M1', 'ShippingPhone');
+            $sheet->setCellValue('N1', 'ShippingEmail');
+            $sheet->setCellValue('O1', 'ShippingAddress1');
+            $sheet->setCellValue('P1', 'ShippingAddress2');
+            $sheet->setCellValue('Q1', 'ShippingAddress3');
+            $sheet->setCellValue('R1', 'ShippingCity');
+            $sheet->setCellValue('S1', 'ShippingState');
+            $sheet->setCellValue('T1', 'ShippingZipCode');
+            $sheet->setCellValue('U1', 'ShippingCountry');
+            $sheet->setCellValue('V1', 'BillingName');
+            $sheet->setCellValue('W1', 'BillingPhone');
+            $sheet->setCellValue('X1', 'BillingEmail');
+            $sheet->setCellValue('Y1', 'BillingAddress1');
+            $sheet->setCellValue('Z1', 'BillingAddress2');
+            $sheet->setCellValue('AA1', 'BillingAddress3');
+            $sheet->setCellValue('AB1', 'BillingCity');
+            $sheet->setCellValue('AC1', 'BillingState');
+            $sheet->setCellValue('AD1', 'BillingZipCode');
+            $sheet->setCellValue('AE1', 'BillingCountry');
+            $rows = 2;
+            foreach ($order_data as $orderd) {
+                $sheet->setCellValue('A' . $rows, $orderd['MarketPlaceId']);
+                $sheet->setCellValue('B' . $rows, $orderd['OrderId']);
+                $sheet->setCellValue('C' . $rows, $orderd['Status']);
+                $sheet->setCellValue('D' . $rows, $orderd['Currency']);
+                $sheet->setCellValue('E' . $rows, $orderd['PaymentStatus']);
+                $sheet->setCellValue('F' . $rows, $orderd['PaymentMethod']);
+                $sheet->setCellValue('G' . $rows, $orderd['BuyerNote']);
+                $sheet->setCellValue('H' . $rows, $orderd['SellerNote']);
+                $sheet->setCellValue('I' . $rows, $orderd['ShippingMethod']);
+                $sheet->setCellValue('J' . $rows, $orderd['Tracking']);
+                $sheet->setCellValue('K' . $rows, $orderd['Carrier']);
+                $sheet->setCellValue('L' . $rows, $orderd['ShippingName']);
+                $sheet->setCellValue('M' . $rows, $orderd['ShippingPhone']);
+                $sheet->setCellValue('N' . $rows, $orderd['ShippingEmail']);
+                $sheet->setCellValue('O' . $rows, $orderd['ShippingAddress1']);
+                $sheet->setCellValue('P' . $rows, $orderd['ShippingAddress2']);
+                $sheet->setCellValue('Q' . $rows, $orderd['ShippingAddress3']);
+                $sheet->setCellValue('R' . $rows, $orderd['ShippingCity']);
+                $sheet->setCellValue('S' . $rows, $orderd['ShippingState']);
+                $sheet->setCellValue('T' . $rows, $orderd['ShippingZipCode']);
+                $sheet->setCellValue('U' . $rows, $orderd['ShippingCountry']);
+                $sheet->setCellValue('V' . $rows, $orderd['BillingName']);
+                $sheet->setCellValue('W' . $rows, $orderd['BillingPhone']);
+                $sheet->setCellValue('X' . $rows, $orderd['BillingEmail']);
+                $sheet->setCellValue('Y' . $rows, $orderd['BillingAddress1']);
+                $sheet->setCellValue('Z' . $rows, $orderd['BillingAddress2']);
+                $sheet->setCellValue('AA' . $rows, $orderd['BillingAddress3']);
+                $sheet->setCellValue('AB' . $rows, $orderd['BillingCity']);
+                $sheet->setCellValue('AC' . $rows, $orderd['BillingState']);
+                $sheet->setCellValue('AD' . $rows, $orderd['BillingZipCode']);
+                $sheet->setCellValue('AE' . $rows, $orderd['BillingCountry']);
+                $rows++;
+            }
+
+            if ($export_type == 'xlsx' || $export_type == 'csv') {
+                $this->view->flash([
+                    'alert' => 'Order Data sucessfully export..!',
+                    'alert_type' => 'success'
+                ]);
+
+                if ($export_type == 'xlsx') {
+                    //$writer = new WriteXlsx($spreadsheet);
+                    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
+                    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    header('Content-Disposition: attachment; filename="order.xlsx"');
+                    $writer->save("php://output");
+                    return $this->view->redirect('/order/export-order');
+                } else if ($export_type == 'csv') {
+                    $writer = new WriteCsv($spreadsheet);
+                    $writer->save("order." . $export_type);
+                    return $this->view->redirect('/order/export-order');
+                }
+            } else {
+                throw new Exception("Failed to update Settings. Please ensure all input is filled out correctly.", 301);
+            }
+        } catch (Exception $e) {
+
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+
+            $validated['alert'] = 'Please Select Xlsx or Csv File Format..!';
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->redirect('/order/export-order');
+        }
     }
 
     /*
@@ -473,6 +631,24 @@ class OrderController
             $update_data['ConfirmEmail'] = $methodData['ConfirmEmail'];
             $update_data['CancelEmail'] = $methodData['CancelEmail'];
             $update_data['DeferEmail'] = $methodData['DeferEmail'];
+            $update_data['DontSendCopy'] = (isset($methodData['DontSendCopy']) && !empty($methodData['DontSendCopy'])) ? 1 : null;
+            $update_data['NoAdditionalOrder'] = $methodData['NoAdditionalOrder'];
+            /* for($i=1; $i <= $nooforderfoldercount;$i++)
+            {
+                $work1 = $methodData['NoAdditionalOrder'.$i];
+                //echo 'sadasda';
+                //print_r($work1); exit;
+            }
+            return $i;*/
+            /*          $sql = array;
+$yourArrFromCsv = explode(",", $nooforderfoldercount);
+//then insert to db
+foreach( $yourArrFromCsv as $row ) {
+    $sql[] = '('.$compProdId.', '.$row.')';
+}
+mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sql));*/
+
+
 
             $is_data = $this->orderinsertOrUpdate($update_data);
 
@@ -692,6 +868,7 @@ class OrderController
         $form_data['BillingCountry'] = (isset($form['BillingCountry']) && !empty($form['BillingCountry'])) ? $form['BillingCountry'] : null;
 
         $form_data['UserId'] = Session::get('auth_user_id');
+        $form_data['StoreId'] = $this->storeid;
         $form_data['Created'] = date('Y-m-d H:I:S');
         return $form_data;
     }
@@ -891,7 +1068,283 @@ class OrderController
         $form_data['BillingState'] = (isset($form['BillingState']) && !empty($form['BillingState'])) ? $form['BillingState'] : null;
         $form_data['BillingZipCode'] = (isset($form['BillingZipCode']) && !empty($form['BillingZipCode'])) ? $form['BillingZipCode'] : null;
         $form_data['BillingCountry'] = (isset($form['BillingCountry']) && !empty($form['BillingCountry'])) ? $form['BillingCountry'] : null;
+        $form_data['StoreId'] = $this->storeid;
         $form_data['Updated'] = date('Y-m-d H:i:s');
         return $form_data;
+    }
+
+    /*
+    * searchOrder - Update Batch Move
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function searchOrder(ServerRequest $request)
+    {
+
+        try {
+            $methodData = $request->getParsedBody();
+            unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
+
+            $result = (new Product($this->db))->searchProductFilter($methodData);
+
+            if (isset($result) && !empty($result)) {
+                $this->view->flash([
+                    'alert' => 'Order result get successfully..!',
+                    'alert_type' => 'success'
+                ]);
+                return $this->view->buildResponse('order/browse', ['all_order' => $result]);
+            } else {
+                throw new Exception("Search result not found...!", 301);
+            }
+        } catch (Exception $e) {
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/browse', []);
+        }
+    }
+
+    /*
+    * updateOrderStatus - Update Batch Move
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function updateOrderStatus(ServerRequest $request)
+    {
+        try {
+            $methodData = $request->getParsedBody();
+            unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
+
+            $map_data = $this->_mapOrderStatusUpdate($methodData);
+
+            if (isset($map_data) && !empty($map_data)) {
+                $this->view->flash([
+                    'alert' => 'Order Status updated successfully..!',
+                    'alert_type' => 'success'
+                ]);
+                $res['status'] = true;
+                $res['data'] = [];
+                $res['message'] = 'Order Status updated successfully..!';
+                die(json_encode($res));
+                //return $this->view->buildResponse('order/browse', []);
+            } else {
+                throw new Exception("Order Status not updated...!", 301);
+            }
+        } catch (Exception $e) {
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = 'Order Status not updated..!';
+            die(json_encode($res));
+            // return $this->view->buildResponse('order/browse', []);
+        }
+    }
+
+
+    /*
+    @author    :: Tejas
+    @task_id   :: 
+    @task_desc :: 
+    @params    :: 
+    */
+    public function _mapOrderStatusUpdate($status_data = [])
+    {
+        foreach ($status_data['ids'] as $key_data => $value) {
+            $update_result = (new Order($this->db))->editOrder($value, ['Status' => $status_data['status']]);
+        } // Loops Ends
+        return true;
+    }
+
+
+    /*
+     @author    :: Tejas
+     @task_id   :: 
+     @task_desc :: 
+     @params    :: 
+    */
+    public function updateOrderChange(ServerRequest $request)
+    {
+        try {
+            $methodData = $request->getParsedBody();
+            unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
+
+            $map_data = (new Order($this->db))->getStatusOrders($methodData['OrderStatus']);
+            if (isset($map_data) && !empty($map_data)) {
+                $this->view->flash([
+                    'alert' => 'Order Status get successfully..!',
+                    'alert_type' => 'success'
+                ]);
+                return $this->view->buildResponse('order/browse', ['all_order' => $map_data]);
+            } else {
+                throw new Exception("Order result not get...!", 301);
+            }
+        } catch (Exception $e) {
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/browse', []);
+        }
+    }
+    /*
+    * pickOrder - Update Batch Move
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function pickOrder()
+    {
+        return $this->view->buildResponse('order/pick', []);
+    }
+    /*
+    * packingOrder - load packinglist view
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function packingOrder()
+    {
+        return $this->view->buildResponse('order/packingslip', []);
+    }
+
+    /*
+    * mailingOrder - load mailinglist view
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function mailingOrder()
+    {
+        return $this->view->buildResponse('order/mailinglabel', []);
+    }
+
+
+    /*
+   @author    :: Tejas
+   @task_id   :: 
+   @task_desc :: load html view and generate pdf and download
+   @params    :: 
+   @return    :: pdf download
+  */
+    public function pdfGenerateLoad(ServerRequest $request)
+    {
+        $form = $request->getParsedBody();
+        unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.      
+        try {
+            // require(dirname(dirname(dirname(dirname(__FILE__)))) . '\resources\views\default\order\pdf_mailinglabel.php')
+            $pdf_data = (new Order($this->db))->allorderSearchByOrderData();
+            $mailing_html = $this->loadMailinghtml($pdf_data);
+
+            $mpdf = new Mpdf();
+            $mpdf->WriteHTML($mailing_html);
+            $mpdf->Output();
+        } catch (Exception $e) {
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/mailing', []);
+        }
+    }
+
+    /*
+     @author    :: Tejas
+     @task_id   :: 
+     @task_desc :: 
+     @params    :: 
+     @return    :: 
+    */
+    public function loadMailinghtml($pdf_data)
+    {
+        $html = "";
+        $html .= "";
+        $html .= "<!DOCTYPE html>";
+        $html .= "<html>";
+        $html .= "<head>";
+        $html .= "<title></title>";
+        $html .= "</head>";
+        $html .= "<style>table {
+            border:none;
+            border-collapse: collapse;
+        }        
+        table td {
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+        }        
+        table td:first-child {
+            border-left: none;
+        }        
+        table td:last-child {
+            border-right: none;
+        }</style>";
+        $html .= "<body>";
+        $html .= "<table class='table' id='custom_tbl' border='2' width='100%' style='border-collapse: collapse;'>";
+        $html .= "<thead>";
+        $html .= "<th style='border:1px solid black;'>";
+        $html .= "</th>";
+        $html .= "<th style='border:1px solid black;'>";
+        $html .= "</th>";
+        $html .= "<th style='border:1px solid black;'>";
+        $html .= "</th>";
+        $html .= "<tbody>";
+        if (isset($pdf_data) && !empty($pdf_data)) {
+            foreach (array_chunk($pdf_data, 3) as $row_key => $row_val) {
+                $html .= "<tr style='border:1px solid black;'>";
+                foreach ($row_val as $val_pdf) {
+                    $html .= "<td scope='col'>";
+                    $html .= $val_pdf['ShippingName'] . '<br>';
+                    $html .= $val_pdf['ShippingAddress1'] . '<br>';
+                    $html .= $val_pdf['ShippingAddress2'] . '<br>';
+                    $html .= $val_pdf['ShippingAddress3'] . '<br>';
+                    $html .= $val_pdf['ShippingCity'] . "," . $val_pdf['ShippingState'] . '<br>';
+                    $html .= $val_pdf['ShippingCountry'];
+                    $html .= "</td>";
+                }
+                $html .= "</tr>";
+            }
+        } else {
+            $html .= "<tr>No Records Found</tr>";
+        }
+        $html .= "</tbody>";
+        $html .= "</table>";
+        $html .= "</body>";
+        $html .= "</style>";
+        return $html;
     }
 }
