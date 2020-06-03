@@ -57,6 +57,7 @@ class OrderController
         $store = (new Store($this->db))->find(Session::get('member_id'), 1);
         $this->storeid   = (isset($store[0]['Id']) && !empty($store[0]['Id'])) ? $store[0]['Id'] : 0;
         ini_set('memory_limit', '-1');
+        ini_set("pcre.backtrack_limit", "1000000");
     }
     public function browse()
     {
@@ -188,8 +189,7 @@ class OrderController
 
     public function exportOrderData(ServerRequest $request)
     {
-        try 
-        {
+        try {
             $form = $request->getParsedBody();
             $export_type = $form['export_format'];
             $export_val   = $form['exportType'];
@@ -197,32 +197,27 @@ class OrderController
             $to_date         = $form['to_date'];
             $orderStatus  = $form['orderStatus'];
 
-             if($export_val == 'new')
-            {
-               $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
+            if ($export_val == 'new') {
+                $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
             }
 
-             if($export_val == 'range')
-            {
-    
-                 $formD  =  date("Y-m-d",strtotime($from_date));
-                 $ToD    =  date("Y-m-d",strtotime($to_date));
+            if ($export_val == 'range') {
 
-                 $order_data = (new Order($this->db))->dateRangeSearchByOrderData($formD, $ToD);
+                $formD  =  date("Y-m-d", strtotime($from_date));
+                $ToD    =  date("Y-m-d", strtotime($to_date));
+
+                $order_data = (new Order($this->db))->dateRangeSearchByOrderData($formD, $ToD);
             }
 
-             if($export_val == 'status')
-            {
-               $export_val = $orderStatus;
-               $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
+            if ($export_val == 'status') {
+                $export_val = $orderStatus;
+                $order_data = (new Order($this->db))->orderstatusSearchByOrderData($export_val);
             }
 
-             if($export_val == 'All')
-            {
+            if ($export_val == 'All') {
                 $order_data = (new Order($this->db))->allorderSearchByOrderData();
             }
 
-            
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setCellValue('A1', 'MarketPlaceId');
@@ -302,13 +297,15 @@ class OrderController
                     //$writer = new WriteXlsx($spreadsheet);
                     $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
                     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                    header('Content-Disposition: attachment; filename="order.xlsx"');
+                    header('Content-Disposition: attachment; filename="orders.xlsx"');
                     $writer->save("php://output");
-                    return $this->view->redirect('/order/export-order');
+                    exit;
                 } else if ($export_type == 'csv') {
                     $writer = new WriteCsv($spreadsheet);
-                    $writer->save("order." . $export_type);
-                    return $this->view->redirect('/order/export-order');
+                    header('Content-Type: application/csv');
+                    header('Content-Disposition: attachment; filename="orders.csv"');
+                    $writer->save("php://output");
+                    exit;
                 }
             } else {
                 throw new Exception("Failed to update Settings. Please ensure all input is filled out correctly.", 301);
@@ -1081,13 +1078,11 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
     */
     public function searchOrder(ServerRequest $request)
     {
-
         try {
             $methodData = $request->getParsedBody();
             unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
 
             $result = (new Product($this->db))->searchProductFilter($methodData);
-
             if (isset($result) && !empty($result)) {
                 $this->view->flash([
                     'alert' => 'Order result get successfully..!',
@@ -1254,7 +1249,7 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
    @params    :: 
    @return    :: pdf download
   */
-    public function pdfGenerateLoad(ServerRequest $request)
+    public function pdfGenerateMailingLoad(ServerRequest $request)
     {
         $form = $request->getParsedBody();
         unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.      
@@ -1344,7 +1339,356 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
         $html .= "</tbody>";
         $html .= "</table>";
         $html .= "</body>";
-        $html .= "</style>";
+        $html .= "</html>";
         return $html;
+    }
+
+    /*
+   @author    :: Tejas
+   @task_id   :: 
+   @task_desc :: load html view and generate pdf and download
+   @params    :: 
+   @return    :: pdf download
+  */
+    public function pdfGeneratePackingLoad(ServerRequest $request)
+    {
+        $form = $request->getParsedBody();
+        unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.      
+        try {
+            // require(dirname(dirname(dirname(dirname(__FILE__)))) . '\resources\views\default\order\pdf_mailinglabel.php')
+            $pdf_data = (new Order($this->db))->getPackingOrders($form);
+            // $view = $this->view->buildResponse('order/pdf_pick', ['pdf_data' => $pdf_data]);
+
+            $packing_html = $this->loadPackinghtml($pdf_data);
+            $mpdf = new Mpdf();
+            $mpdf->use_kwt = true;
+            // $mpdf->showImageErrors = true;
+            // $mpdf->imageVars['myvariable'] = file_get_contents('/assets/images/code39.PNG');
+            $mpdf->WriteHTML($packing_html);
+            $mpdf->Output();
+        } catch (\Mpdf\MpdfException $e) {
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/packingslip', []);
+        }
+    }
+
+    /*
+     @author    :: Tejas
+     @task_id   :: 
+     @task_desc :: 
+     @params    :: 
+     @return    :: 
+    */
+    public function loadPackinghtml($pdf_data)
+    {
+        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/code39.PNG'));
+        // $img_barcode = \App\Library\Config::get('company_url') . '/assets/images/code39.PNG';
+        $html = "";
+        $html .= "";
+        $html .= "<!DOCTYPE html>";
+        $html .= "<html>";
+        $html .= "<head>";
+        $html .= "<title></title>";
+        $html .= "</head>";
+        $html .= "<body>";
+        if (isset($pdf_data) && !empty($pdf_data)) {
+            foreach ($pdf_data as $key_data => $val_data) {
+                $html .= "<table class='table' autosize='1' id='custom_tbl' border='2' width='100%' style='border-collapse: collapse;page-break-after: always;'>";
+                $html .= "<thead>";
+                $html .= "</thead>";
+                $html .= "<tbody>";
+                $html .= "<tr>";
+                $html .= "<td>";
+                $html .= "<div class='main_packing'>";
+                $html .= "<div class='main_packing_left'>";
+                $html .= "<h3>Order: " . $val_data['OrderId'] . "</h3>";
+                $html .= "<p>(" . $val_data['MarketplaceName'] . "Order: #" . $val_data['OrderId'] . ")</p>";
+                $html .= "<h4>Order Date: &nbsp;" . $val_data['OrderDate'] . "</h4>";
+                $html .= "<p><b>Shipping Method: </b>&nbsp;" . $val_data['ShippingMethod'] . "</p>";
+                $html .= "</div>";
+                $html .= "<div class='main_packing_right'>";
+                $html .= "</div>";
+                $html .= "</div>";
+                $html .= "</td>";
+                $html .= "<td></td>";
+                $html .= "<td></td>";
+                $html .= "<td></td>";
+                $html .= "<td><img src='" . $image . "'></td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td colspan='5'><b>Selling and Buying</b></td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td colspan='3'><b>Ship To</b></td>";
+                $html .= "<td colspan='2'><b>Bill To</b></td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td colspan='3'><b>" . $val_data['ShippingName'] . "</b><br>";
+                $html .= $val_data['ShippingAddress1'] . "<br>";
+                $html .=  $val_data['ShippingAddress2'] . "<br>";
+                $html .= $val_data['ShippingAddress3'] . "<br>";
+                $html .= $val_data['ShippingCity'] . "," . $val_data['ShippingState'] . "<br>";
+                $html .= $val_data['ShippingCountry'] . "<br>";
+                $html .= $val_data['ShippingPhone'] . "</td>";
+                $html .= "<td colspan='2'><b>" . $val_data['BillingName'] . "</b><br>";
+                $html .= $val_data['BillingAddress1'] . "<br>";
+                $html .= $val_data['BillingAddress2'] . "<br>";
+                $html .= $val_data['BillingAddress3'] . "<br>";
+                $html .= $val_data['BillingCity'] . "," . $val_data['ShippingState'] . "<br>";
+                $html .= $val_data['BillingCountry'] . "<br>";
+                $html .= $val_data['BillingPhone'] . "</td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td style='border:1px solid black;'><b>QTY</b></td>";
+                $html .= "<td style='border:1px solid black;'><b>ISBN/UPC</b></td>";
+                $html .= "<td style='border:1px solid black;'><b>Condition</b></td>";
+                $html .= "<td width='30%' style='border:1px solid black;'><b>Description</b></td>";
+                $html .= "<td style='border:1px solid black;'><b>Media</b></td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td style='border:1px solid black;'>" . $val_data['ProductQty'] . "</td>";
+                $html .= "<td style='border:1px solid black;'>" . $val_data['ProductISBN'] . "</td>";
+                $html .= "<td style='border:1px solid black;'>" . $val_data['ProductCondition'] . "</td>";
+                $html .= "<td width='30%'>" . $val_data['ProductDescription'] . "</td>";
+                $html .= "<td>Hardcover</td>";
+                $html .= "</tr>";
+                $html .= "<tr>";
+                $html .= "<td colspan='5'><b>SKU : </b>" . $val_data['ProductSKU'] . "</td>";
+                $html .= "</tr>";
+                $html .= "<tr>";
+                $html .= "<td colspan='5'><b>Location : </b>" . $val_data['ProductSKU'] . "</td>";
+                $html .= "</tr>";
+                $html .= "<tr>";
+                $html .= "<td colspan='5'><b>Note : </b>" . $val_data['ProductDescription'] . "</td>";
+                $html .= "</tr>";
+                $html .= "</tbody>";
+                $html .= "</table>";
+            } // Loops Ends
+        } else {
+            $html .= "<h1>No Records found</h1>";
+        }
+        $html .= "</body>";
+        $html .= "</html>";
+        return $html;
+    }
+
+    /*
+   @author    :: Tejas
+   @task_id   :: 
+   @task_desc :: load html view and generate pdf and download
+   @params    :: 
+   @return    :: pdf download
+  */
+    public function pdfGeneratePickLoad(ServerRequest $request)
+    {
+        $form = $request->getParsedBody();
+        unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.      
+        try {
+            // require(dirname(dirname(dirname(dirname(__FILE__)))) . '\resources\views\default\order\pdf_mailinglabel.php')
+            $pdf_data = (new Order($this->db))->getPickOrderStatus($form);
+
+            // $view = $this->view->buildResponse('order/pdf_pick', ['pdf_data' => $pdf_data]);
+            $packing_html = $this->loadPickinghtml($pdf_data);
+
+            $mpdf = new Mpdf();
+            $mpdf->use_kwt = true;
+            $mpdf->WriteHTML($packing_html);
+            $mpdf->Output();
+        } catch (\Mpdf\MpdfException $e) {
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/packingslip', []);
+        }
+    }
+
+    /*
+     @author    :: Tejas
+     @task_id   :: 
+     @task_desc :: 
+     @params    :: 
+     @return    :: 
+    */
+    public function loadPickinghtml($pdf_data)
+    {
+
+        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/code39.PNG'));
+        // $img_barcode = \App\Library\Config::get('company_url') . '/assets/images/code39.PNG';
+        //$img_barcode = 'test';
+        $html = "";
+        $html .= "";
+        $html .= "<!DOCTYPE html>";
+        $html .= "<html>";
+        $html .= "<head>";
+        $html .= "<title></title>";
+        $html .= "</head>";
+        $html .= "<body>";
+        if (isset($pdf_data) && !empty($pdf_data)) {
+            foreach ($pdf_data as $key_data => $val_data) {
+                $html .= "<table class='table' id='custom_tbl' border='2' width='100%' style='border-collapse: collapse;'>";
+                $html .= "<thead>";
+                $html .= "</thead>";
+                $html .= "<tbody>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td style='border:1px solid black;'>Order </td>";
+                $html .= "<td style='border:1px solid black;'>SKU/ASIN/UPC</td>";
+                $html .= "<td style='border:1px solid black;'>Location</td>";
+                $html .= "<td style='border:1px solid black;'>Category</td>";
+                $html .= "<td style='border:1px solid black;'>Price</td>";
+                $html .= "<td style='border:1px solid black;'>QTY</td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td style='border:1px solid black;'>Barcode </td>";
+                $html .= "<td style='border:1px solid black;'>Description</td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'>Condition</td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "</tr>";
+                $html .= "<tr style='border:1px solid black;'>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'>Note</td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "<td style='border:1px solid black;'></td>";
+                $html .= "</tr>";
+                $html .= "<tr>";
+                $html .= "<td><img src='" . $image . "' width='150'/></td>";
+                $html .= "<td>" . $val_data['ProductSKU'] . "</td>";
+                $html .= "<td>" . $val_data['ProductISBN'] . "<br>" . $val_data['ProductDescription'] . "<br>" . $val_data['BillingCity'] . " ," . $val_data['BillingState'];
+                $html .= "</td>";
+                $html .= "<td>Hardcore<br>";
+                $html .= $val_data['ProductBuyerNote'] . " - " . $val_data['ProductCondition'] . "<br></td>";
+                $html .= "<td>" . $val_data['ProductPrice'] . "</td>";
+                $html .= "<td>" . $val_data['ProductQty'] . "</td>";
+                $html .= "</tr>";
+                $html .= "</tbody>";
+                $html .= "</table>";
+                $html .= "<br><br><br><br><br><br>";
+            } // Loops Ends
+        } else {
+            $html .= "<h1>No Records found</h1>";
+        }
+        $html .= "</body>";
+        $html .= "</html>";
+        return $html;
+    }
+
+    public function export_Orderlist(ServerRequest $request)
+    {
+        $form = $request->getParsedBody();
+        unset($form['__token']);
+
+        $export_type = $form['export_formate'];
+
+        $result_data = (new Order($this->db))->select_multiple_ids($form['ids']);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'MarketPlaceId');
+        $sheet->setCellValue('B1', 'OrderId');
+        $sheet->setCellValue('C1', 'Status');
+        $sheet->setCellValue('D1', 'Currency');
+        $sheet->setCellValue('E1', 'PaymentStatus');
+        $sheet->setCellValue('F1', 'PaymentMethod');
+        $sheet->setCellValue('G1', 'BuyerNote');
+        $sheet->setCellValue('H1', 'SellerNote');
+        $sheet->setCellValue('I1', 'ShippingMethod');
+        $sheet->setCellValue('J1', 'Tracking');
+        $sheet->setCellValue('K1', 'Carrier');
+        $sheet->setCellValue('L1', 'ShippingName');
+        $sheet->setCellValue('M1', 'ShippingPhone');
+        $sheet->setCellValue('N1', 'ShippingEmail');
+        $sheet->setCellValue('O1', 'ShippingAddress1');
+        $sheet->setCellValue('P1', 'ShippingAddress2');
+        $sheet->setCellValue('Q1', 'ShippingAddress3');
+        $sheet->setCellValue('R1', 'ShippingCity');
+        $sheet->setCellValue('S1', 'ShippingState');
+        $sheet->setCellValue('T1', 'ShippingZipCode');
+        $sheet->setCellValue('U1', 'ShippingCountry');
+        $sheet->setCellValue('V1', 'BillingName');
+        $sheet->setCellValue('W1', 'BillingPhone');
+        $sheet->setCellValue('X1', 'BillingEmail');
+        $sheet->setCellValue('Y1', 'BillingAddress1');
+        $sheet->setCellValue('Z1', 'BillingAddress2');
+        $sheet->setCellValue('AA1', 'BillingAddress3');
+        $sheet->setCellValue('AB1', 'BillingCity');
+        $sheet->setCellValue('AC1', 'BillingState');
+        $sheet->setCellValue('AD1', 'BillingZipCode');
+        $sheet->setCellValue('AE1', 'BillingCountry');
+        $rows = 2;
+        foreach ($result_data as $orderd) {
+            $sheet->setCellValue('A' . $rows, $orderd['MarketPlaceId']);
+            $sheet->setCellValue('B' . $rows, $orderd['OrderId']);
+            $sheet->setCellValue('C' . $rows, $orderd['Status']);
+            $sheet->setCellValue('D' . $rows, $orderd['Currency']);
+            $sheet->setCellValue('E' . $rows, $orderd['PaymentStatus']);
+            $sheet->setCellValue('F' . $rows, $orderd['PaymentMethod']);
+            $sheet->setCellValue('G' . $rows, $orderd['BuyerNote']);
+            $sheet->setCellValue('H' . $rows, $orderd['SellerNote']);
+            $sheet->setCellValue('I' . $rows, $orderd['ShippingMethod']);
+            $sheet->setCellValue('J' . $rows, $orderd['Tracking']);
+            $sheet->setCellValue('K' . $rows, $orderd['Carrier']);
+            $sheet->setCellValue('L' . $rows, $orderd['ShippingName']);
+            $sheet->setCellValue('M' . $rows, $orderd['ShippingPhone']);
+            $sheet->setCellValue('N' . $rows, $orderd['ShippingEmail']);
+            $sheet->setCellValue('O' . $rows, $orderd['ShippingAddress1']);
+            $sheet->setCellValue('P' . $rows, $orderd['ShippingAddress2']);
+            $sheet->setCellValue('Q' . $rows, $orderd['ShippingAddress3']);
+            $sheet->setCellValue('R' . $rows, $orderd['ShippingCity']);
+            $sheet->setCellValue('S' . $rows, $orderd['ShippingState']);
+            $sheet->setCellValue('T' . $rows, $orderd['ShippingZipCode']);
+            $sheet->setCellValue('U' . $rows, $orderd['ShippingCountry']);
+            $sheet->setCellValue('V' . $rows, $orderd['BillingName']);
+            $sheet->setCellValue('W' . $rows, $orderd['BillingPhone']);
+            $sheet->setCellValue('X' . $rows, $orderd['BillingEmail']);
+            $sheet->setCellValue('Y' . $rows, $orderd['BillingAddress1']);
+            $sheet->setCellValue('Z' . $rows, $orderd['BillingAddress2']);
+            $sheet->setCellValue('AA' . $rows, $orderd['BillingAddress3']);
+            $sheet->setCellValue('AB' . $rows, $orderd['BillingCity']);
+            $sheet->setCellValue('AC' . $rows, $orderd['BillingState']);
+            $sheet->setCellValue('AD' . $rows, $orderd['BillingZipCode']);
+            $sheet->setCellValue('AE' . $rows, $orderd['BillingCountry']);
+
+            $rows++;
+        }
+
+        if ($export_type == 'xlsx' || $export_type == 'csv') {
+            $this->view->flash([
+                'alert' => 'Order Data sucessfully export..!',
+                'alert_type' => 'success'
+            ]);
+
+            if ($export_type == 'xlsx') {
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment; filename="orders.xlsx"');
+                $writer->save("php://output");
+                exit;
+            } else if ($export_type == 'csv') {
+                $writer = new WriteCsv($spreadsheet);
+                $writer->save("php://output");
+                exit;
+            }
+        }
     }
 }

@@ -40,7 +40,7 @@ class product
         $stmt = $this->db->prepare("SELECT * FROM product WHERE UserId = :UserId AND Status IN ($Status) ORDER BY `Id` DESC");
         $stmt->execute(['UserId' => $UserId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } 
+    }
 
 
 
@@ -81,13 +81,11 @@ class product
 
         $is_or = false;
         $or = '';
-        if (isset($filterData['SKU'], $filterData['Title']) && (!empty($filterData['SKU']) || !empty($filterData['Title']))) {
-            $query .= ' where ';
-        }
+        $query .= ' where';
         // sku filter
         if (isset($filterData['SKU']) && !empty($filterData['SKU'])) {
             $or = (isset($is_or) && $is_or == true) ? 'OR' : '';
-            $query .=  $or . 'product.`SKU` LIKE "%' . $filterData['SKU'] . '%" ';
+            $query .=  $or . ' product.`SKU` LIKE "%' . $filterData['SKU'] . '%" ';
             $is_or = true;
         }
 
@@ -331,5 +329,123 @@ class product
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':Id', $Id, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    public function deletemultiple($ids = null)
+    {
+        $mParams = str_repeat('?,', count($ids) - 1) . '?';
+        $sth = $this->db->prepare("DELETE FROM product WHERE Id IN ($mParams)");
+        return $sth->execute($ids);
+    }
+
+    public function select_multiple_ids($ids = null)
+    {
+        $in  = str_repeat('?,', count($ids) - 1) . '?';
+        $sql = "SELECT * FROM product WHERE Id IN ($in)";
+        $stm = $this->db->prepare($sql);
+        $stm->execute($ids);
+        return $stm->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function getmarketplace($MarketName)
+    {
+
+        $stmt = $this->db->prepare('SELECT * FROM product WHERE MarketPlaceId = :MarketPlaceId');
+        $stmt->execute(['MarketPlaceId' => $MarketName]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+
+
+
+
+
+
+
+    /*
+     @author    :: Tejas
+     @task_id   :: 
+     @task_desc :: 
+     @params    :: 
+    */
+    public function getProductsBelongsTo($ProdId)
+    {
+        $stmt = $this->db->prepare('SELECT product.*, 
+        marketprice_master.Id as `MarketPriceId`,
+        marketprice_master.ProductId as `MarketPriceProductId`,
+        marketprice_master.AbeBooks as `AbeBooks`,
+        marketprice_master.Alibris as `Alibris`,
+        marketprice_master.Amazon as `Amazon`,
+        marketprice_master.AmazonEurope as `AmazonEurope`,
+        marketprice_master.BarnesAndNoble as `BarnesAndNoble`,
+        marketprice_master.Biblio as `Biblio`,
+        marketprice_master.Chrislands as `Chrislands`,
+        marketprice_master.eBay as `eBay`,
+        marketprice_master.eCampus as `eCampus`,
+        marketprice_master.TextbookRush as `TextbookRush`,
+        marketprice_master.TextbookX as `TextbookX`,
+        marketprice_master.Valore as `Valore`,
+
+        shipping_templates.Id as `ShipTemplateId`,
+        shipping_templates.ProductId as `ShipTemplateProductId`,
+        shipping_templates.AbeBooksTemplate as `AbeBooksTemplate`,
+        shipping_templates.AlibrisTemplate as `AlibrisTemplate`,
+        shipping_templates.AmazonTemplate as `AmazonTemplate`,
+        shipping_templates.AmazonEuropeTemplate as `AmazonEuropeTemplate`,
+        shipping_templates.BarnesAndNobleTemplate as `BarnesAndNobleTemplate`,
+        shipping_templates.BiblioTemplate as `BiblioTemplate`,
+        shipping_templates.ChrislandsTemplate as `ChrislandsTemplate`,
+        shipping_templates.eBayTemplate as `eBayTemplate`,
+        shipping_templates.eCampusTemplate as `eCampusTemplate`,
+        shipping_templates.TextbookRushTemplate as `TextbookRushTemplate`,
+        shipping_templates.TextbookXTemplate as `TextbookXTemplate`,
+        shipping_templates.ValoreTemplate as `ValoreTemplate`,
+        shipping_templates.DefaultTemplate as `DefaultTemplate`,
+
+        ebay_shipping_rates.Id as `ShipRateId`,
+        ebay_shipping_rates.ProductId as `ShipRateProductId`,
+        ebay_shipping_rates.Domestic as `Domestic`,
+        ebay_shipping_rates.International as `International`,
+
+        marketplace_handletime.Id as `HandlingTimeId`,
+        marketplace_handletime.ProductId as `HandlingTimeProductId`,
+        marketplace_handletime.AbeBooksHandlingTime as `AbeBooksHandlingTime`,
+        marketplace_handletime.AlibrisHandlingTime as `AlibrisHandlingTime`,
+        marketplace_handletime.AmazonHandlingTime as `AmazonHandlingTime`,
+        marketplace_handletime.AmazonEuropeHandlingTime as `AmazonEuropeHandlingTime`,
+        marketplace_handletime.BarnesAndNobleHandlingTime as `BarnesAndNobleHandlingTime`,
+        marketplace_handletime.BiblioHandlingTime as `BiblioHandlingTime`,
+        marketplace_handletime.ChrislandsHandlingTime as `ChrislandsHandlingTime`,
+        marketplace_handletime.eBayHandlingTime as `eBayHandlingTime`,
+        marketplace_handletime.eCampusHandlingTime as `eCampusHandlingTime`,
+        marketplace_handletime.TextbookRushHandlingTime as `TextbookRushHandlingTime`,
+        marketplace_handletime.TextbookXHandlingTime as `TextbookXHandlingTime`,
+        marketplace_handletime.ValoreHandlingTime as `ValoreHandlingTime`,
+        marketplace_handletime.DefaultHandlingTime as `DefaultHandlingTime`,
+
+        marketspecific_addtional.Id as `HandlingTimeId`,
+        marketspecific_addtional.ProductId as `HandlingTimeProductId`,
+        marketspecific_addtional.Cost as `Cost`,
+        marketspecific_addtional.Location as `Location`,
+        marketspecific_addtional.Brand as `Brand`,
+        marketspecific_addtional.Language as `Language`,
+        marketspecific_addtional.AdditionalUIEE as `AdditionalUIEE`,
+        marketspecific_addtional.Source as `Source`,
+        marketspecific_addtional.Category as `Category`,
+        marketspecific_addtional.ManufacturerPartNumber as `ManufacturerPartNumber`
+FROM product
+LEFT JOIN marketprice_master
+   ON marketprice_master.ProductId = product.Id
+LEFT JOIN shipping_templates
+   ON shipping_templates.ProductId = product.Id
+LEFT JOIN ebay_shipping_rates
+   ON ebay_shipping_rates.ProductId = product.Id
+LEFT JOIN marketplace_handletime
+   ON marketplace_handletime.ProductId = product.Id
+LEFT JOIN marketspecific_addtional
+   ON marketspecific_addtional.ProductId = product.Id
+   WHERE product.Id = ' . $ProdId . '');
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
