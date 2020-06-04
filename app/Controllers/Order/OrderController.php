@@ -85,11 +85,34 @@ class OrderController
     public function updateBatchMove(ServerRequest $request)
     {
         try {
+
+            $order_ids = array();
             $methodData = $request->getParsedBody();
             unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
 
             $map_data = $this->mapBatchMove($methodData);
-            $is_data = $this->insertOrUpdate($map_data);
+
+            $order_ids = array_column($map_data, 'OrderId');
+
+             $is_data = $this->insertOrUpdate($map_data);
+
+             foreach ($order_ids as $order_id) 
+             {
+
+              $mail_data = (new Order($this->db))->findByorder_id($order_id);
+
+              $message['html']  = $this->view->make('emails/orderconfirm');
+              $message['plain'] = $this->view->make('emails/plain/orderconfirm');
+              $mailer = new Email();
+              $mailer->sendEmail(
+                $mail_data['ShippingEmail'],
+                Config::get('company_name'),
+                _('Order Confirmation'),
+                $message,
+                ['OrderId' => $mail_data['OrderId'], 'BillingName' => $mail_data['BillingName'],'Carrier' => $mail_data['Carrier'],'Tracking' => $mail_data['Tracking']]
+            );
+
+          }
 
             if (isset($is_data) && !empty($is_data)) {
                 $this->view->flash([
@@ -294,7 +317,6 @@ class OrderController
                 ]);
 
                 if ($export_type == 'xlsx') {
-                    //$writer = new WriteXlsx($spreadsheet);
                     $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
                     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
                     header('Content-Disposition: attachment; filename="orders.xlsx"');
@@ -400,8 +422,8 @@ class OrderController
             $update_data['MaxPostageBatch'] = $methodData['MaxPostageBatch'];
             $update_data['CustomsSigner'] = $methodData['CustomsSigner'];
             $update_data['DefaultWeight'] = $methodData['DefaultWeight'];
-            $update_data['FlatRatePriority'] = $methodData['FlatRatePriority'];
-            $update_data['GlobalWeight'] = $methodData['GlobalWeight'];
+            $update_data['FlatRatePriority'] = (isset($methodData['FlatRatePriority'])) ? $methodData['FlatRatePriority'] : 0;
+            $update_data['GlobalWeight'] = (isset($methodData['GlobalWeight'])) ? $methodData['GlobalWeight'] : 0;
 
 
 
@@ -937,7 +959,24 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
 
             // Sanitize and Validate
             $validate = new ValidateSanitize();
-            $form = $validate->sanitize($methodData); // only trims & sanitizes strings (other filters available)
+            $form = $validate->sanitize($methodData); 
+
+             // start mail
+
+            $message['html']  = $this->view->make('emails/orderconfirm');
+            $message['plain'] = $this->view->make('emails/plain/orderconfirm');
+            $mailer = new Email();
+            $mailer->sendEmail(
+                $form['ShippingEmail'],
+                Config::get('company_name'),
+                _('Order Confirmation'),
+                $message,
+                ['OrderId' => $form['MarketPlaceOrder'], 'BillingName' => $form['BillingName'],'Carrier' => $form['CarrierOrder'],'Tracking' => $form['Tracking']]
+            );
+
+             //End mail
+
+            // only trims & sanitizes strings (other filters available)
             $validate->validation_rules(array(
                 'MarketPlaceOrder'    => 'required',
                 'PaymentMethod'       => 'required',
@@ -1163,10 +1202,29 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
     @task_desc :: 
     @params    :: 
     */
-    public function _mapOrderStatusUpdate($status_data = [])
+     public function _mapOrderStatusUpdate($status_data = [])
     {
-        foreach ($status_data['ids'] as $key_data => $value) {
+        foreach ($status_data['ids'] as $key_data => $value) 
+
+        {
+
             $update_result = (new Order($this->db))->editOrder($value, ['Status' => $status_data['status']]);
+
+
+            $mail_data = (new Order($this->db))->findById($value);
+
+                $message['html']  = $this->view->make('emails/orderconfirm');
+                $message['plain'] = $this->view->make('emails/plain/orderconfirm');
+                $mailer = new Email();
+                $mailer->sendEmail(
+                    $mail_data['ShippingEmail'],
+                    Config::get('company_name'),
+                    _('Order Confirmation'),
+                    $message,
+                    ['OrderId' => $mail_data['OrderId'], 'BillingName' => $mail_data['BillingName'],'Carrier' => $mail_data['Carrier'],'Tracking' => $mail_data['Tracking']]
+                );
+
+
         } // Loops Ends
         return true;
     }
@@ -1679,15 +1737,20 @@ mysql_query('INSERT INTO table (comp_prod, product_id) VALUES '.implode(',', $sq
             ]);
 
             if ($export_type == 'xlsx') {
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
+                ob_clean();
                 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                header('Content-Disposition: attachment; filename="orders.xlsx"');
-                $writer->save("php://output");
-                exit;
+                header('Content-Disposition: attachment; filename="order.xlsx"');
+                header('Cache-Control: max-age=0');
+                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+                $writer->save('order.xlsx');
+
+                die(json_encode(['status' => true, 'filename' => '/order.xlsx']));
             } else if ($export_type == 'csv') {
                 $writer = new WriteCsv($spreadsheet);
-                $writer->save("php://output");
-                exit;
+                header('Content-Type: application/csv');
+                header('Content-Disposition: attachment; filename="order.csv"');
+                $writer->save("order.csv");
+                die(json_encode(['status' => true, 'filename' => '/order.csv']));
             }
         }
     }
