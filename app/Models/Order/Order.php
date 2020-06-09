@@ -83,18 +83,19 @@ LEFT JOIN marketplace
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function confirmation_file()
-    {
-        $stmt = $this->db->prepare('SELECT * FROM `confirmation_file` ORDER BY `ID` DESC');
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
 
     public function getAllConfirmationFiles()
     {
         $stmt = $this->db->prepare('SELECT * FROM `confirmation_file` ORDER BY `ID` DESC');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findConfirmFileId($FileId)
+    {
+        $stmt = $this->db->prepare('SELECT * FROM confirmation_file WHERE Id = :Id');
+        $stmt->execute(['Id' => $FileId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
 
@@ -601,11 +602,12 @@ LEFT JOIN marketplace
             $insert .= $key . ', ';
             $values .= ':' . $key . ', ';
         }
+
         $insert = substr($insert, 0, -2);
         $values = substr($values, 0, -2);
-
         $query  = 'INSERT INTO confirmation_file (' . $insert . ') ';
         $query .= 'VALUES(' . $values . ')';
+
         $stmt = $this->db->prepare($query);
 
         if (!$stmt->execute($form)) {
