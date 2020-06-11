@@ -236,10 +236,8 @@ class OrderController
             }
 
             if ($export_val == 'range') {
-
-                $formD  =  date("Y-m-d", strtotime($from_date));
-                $ToD    =  date("Y-m-d", strtotime($to_date));
-
+                $formD  =  date("Y-m-d 00:00:00", strtotime($from_date));
+                $ToD    =  date("Y-m-d 23:59:00", strtotime($to_date));
                 $order_data = (new Order($this->db))->dateRangeSearchByOrderData($formD, $ToD);
             }
 
@@ -1301,7 +1299,7 @@ class OrderController
         unset($form['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.      
         try {
             // require(dirname(dirname(dirname(dirname(__FILE__)))) . '\resources\views\default\order\pdf_mailinglabel.php')
-            $pdf_data = (new Order($this->db))->allorderSearchByOrderData();
+            $pdf_data = (new Order($this->db))->allorderSearchByOrderData($form);
             $mailing_html = $this->loadMailinghtml($pdf_data);
 
             $mpdf = new Mpdf();
@@ -1437,7 +1435,8 @@ class OrderController
     */
     public function loadPackinghtml($pdf_data)
     {
-        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/code39.PNG'));
+        $all_order = (new LabelSetting($this->db))->LabelSettingfindByUserId(Session::get('auth_user_id'));
+        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/'.$all_order['BarcodeType'].'.png'));
         // $img_barcode = \App\Library\Config::get('company_url') . '/assets/images/code39.PNG';
         $html = "";
         $html .= "";
@@ -1576,7 +1575,8 @@ class OrderController
     public function loadPickinghtml($pdf_data)
     {
 
-        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/code39.PNG'));
+        $all_order = (new LabelSetting($this->db))->LabelSettingfindByUserId(Session::get('auth_user_id'));
+        $image = 'data:image/png;base64,' . base64_encode(file_get_contents(getcwd() . '/assets/images/'.$all_order['BarcodeType'].'.png'));
         // $img_barcode = \App\Library\Config::get('company_url') . '/assets/images/code39.PNG';
         //$img_barcode = 'test';
         $html = "";
@@ -1725,7 +1725,6 @@ class OrderController
             ]);
 
             if ($export_type == 'xlsx') {
-                ob_clean();
                 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
                 header('Content-Disposition: attachment; filename="order.xlsx"');
                 header('Cache-Control: max-age=0');
@@ -2002,6 +2001,57 @@ class OrderController
             $validated['alert_type'] = 'danger';
             $this->view->flash($validated);
             die(json_encode(['status' => false, 'message' => 'File not uploaded', 'data' => null, 'filename' => 'null']));
+        }
+    }
+
+
+    /*
+    * filterConfirmFileStatus - Update Batch Move
+    * @param  $form  - Array of form fields, name match Database Fields
+    *                  Form Field Names MUST MATCH Database Column Names   
+    * @return boolean 
+    */
+    public function filterConfirmFileStatus(ServerRequest $request)
+    {
+        try {
+            $methodData = $request->getParsedBody();
+            unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.        
+
+            if (isset($methodData['file_status']) && ($methodData['file_status'] == 'all' || $methodData['file_status'] == 'done' || $methodData['file_status'] == 'failed')) {
+                $status = [0, 1];
+                if ($methodData['file_status'] == 'done') {
+                    $status = [1];
+                } else if ($methodData['file_status'] == 'done') {
+                    $status = [0];
+                }
+                $result = (new Order($this->db))->findConfirmFileStatus($status);
+            } else {
+                throw new Exception("No Result found...!", 1);
+            }
+
+            if (isset($result) && !empty($result)) {
+                $this->view->flash([
+                    'alert' => 'Files result get successfully..!',
+                    'alert_type' => 'success'
+                ]);
+
+                return $this->view->buildResponse('order/confirmation_file', ['all_order' => $result]);
+            } else {
+                throw new Exception("Search result not found...!", 301);
+            }
+        } catch (Exception $e) {
+
+            $res['status'] = false;
+            $res['data'] = [];
+            $res['message'] = $e->getMessage();
+            $res['ex_message'] = $e->getMessage();
+            $res['ex_code'] = $e->getCode();
+            $res['ex_file'] = $e->getFile();
+            $res['ex_line'] = $e->getLine();
+            $validated['alert'] = $e->getMessage();
+            $validated['alert_type'] = 'danger';
+            $this->view->flash($validated);
+            return $this->view->buildResponse('order/confirmation_file', ['all_order' => []]);
         }
     }
 }
