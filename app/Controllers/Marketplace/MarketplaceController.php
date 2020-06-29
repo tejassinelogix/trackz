@@ -63,7 +63,8 @@ class MarketplaceController
         $validated = $validate->run($form, true);
         // use validated as it is filtered and validated        
         if ($validated === false) {
-            $validated['alert'] = 'Sorry, we could not got to next step.  Please try again.';
+            //$validated['alert'] = 'Sorry, we could not got to next step.  Please try again.';
+            $validated['alert'] = 'Sorry, we could not got to next step. Please try again. Need to change got to go';
             $validated['alert_type'] = 'danger';
             $this->view->flash($validated);
             return $this->view->redirect('/marketplace/dashboard');
@@ -176,7 +177,6 @@ class MarketplaceController
     {
         $methodData = $request->getParsedBody();
         unset($methodData['__token']); // remove CSRF token or PDO bind fails, too many arguments, Need to do everytime.
-
         $form_udpate_data = array(
             'Id' => (isset($methodData['Id']) && !empty($methodData['Id'])) ? $methodData['Id'] : null,
             'EmailAddress' => (isset($methodData['EmailAddress']) && !empty($methodData['EmailAddress'])) ? $methodData['EmailAddress'] : null,
@@ -216,13 +216,11 @@ class MarketplaceController
                 'alert' => 'Failed to update marketplace. Please ensure all input is filled out correctly.',
                 'alert_type' => 'danger'
             ]);
+            $market_price = Config::get('market_price');
+            $methodData['FtpUserId'] = $methodData['FtpId'];
+            $methodData['FtpPassword'] = $methodData['FtpPwd'];
             return $this->view->buildResponse('/marketplace/edit', [
-                'update_id' => $methodData['update_id'],
-                'update_name' => $methodData['Name'],
-                'update_delivery' => $methodData['DeliveryTime'],
-                'update_fee' => $methodData['InitialFee'],
-                'update_discount_fee' => $methodData['DiscountFee'],
-                'update_minimum' => $methodData['Minimum']
+                'form' => $methodData, 'market_price' => $market_price
             ]);
         }
     }
