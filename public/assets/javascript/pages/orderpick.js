@@ -1,7 +1,6 @@
 $(document).ready(function () {
-  
   // Handle click on "btn_mailing_download" control Starts
-  $(document).on("click", ".btn_pick_download, .btn_pick_view", function () {
+  $(document).on("click", ".btn_pick_download", function () {
     // Ajax CSRF Token Setup
     $.ajaxSetup({
       headers: {
@@ -17,10 +16,16 @@ $(document).ready(function () {
       },
       dataType: "JSON",
       beforeSend: function () {},
-      success: function (data, textStatus, jqXHR) {
+      success: function (data, textStatus, jqXHR) {        
         if (data.status) {
-          location.reload();
-        } else {
+          var downloadLink;
+          downloadLink = document.createElement("a");
+          downloadLink.download = "picking.pdf";
+          downloadLink.href = BASE_URL + "/assets/order/picking/picking.pdf";
+          downloadLink.style.display = "none";
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+        }else{
           location.reload();
         }
       },
